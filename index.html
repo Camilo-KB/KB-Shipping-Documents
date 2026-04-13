@@ -1,0 +1,2903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KB Shipping Documents — Kaffe Bueno</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #1a1612;
+    --cream: #f5f0e8;
+    --warm-white: #faf8f4;
+    --espresso: #2c1810;
+    --copper: #b5621e;
+    --copper-light: #d4824a;
+    --copper-pale: #f0d5c0;
+    --sage: #5a6b52;
+    --border: #d4c8b8;
+    --border-light: #e8e0d4;
+    --muted: #8a7d70;
+    --error: #c0392b;
+    --success: #2d6a4f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--espresso);
+    color: var(--cream);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--copper);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--cream);
+  }
+  .app-header .logo span { color: var(--copper-light); }
+  .header-meta { font-family: 'DM Mono', monospace; font-size: 10px; color: #a89880; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* ── LAYOUT ── */
+  .app-body { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── TABS ── */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 28px; border-bottom: 2px solid var(--border); }
+  .tab-btn {
+    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 10px 24px;
+    background: none; border: none; border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer; color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab-btn.active { color: var(--espresso); border-bottom-color: var(--copper); font-weight: 600; }
+  .tab-btn:hover:not(.active) { color: var(--ink); }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── SECTION CARDS ── */
+  .card {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--espresso);
+    color: var(--cream);
+    padding: 10px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── FORM GRID ── */
+  .form-grid { display: grid; gap: 14px; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .field label .required { color: var(--copper); margin-left: 2px; }
+
+  input[type=text], input[type=email], input[type=tel], input[type=number], select, textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: white;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--copper); box-shadow: 0 0 0 2px var(--copper-pale); }
+  input[readonly], input[disabled] { background: #f0ece6; color: var(--muted); cursor: default; }
+  select { cursor: pointer; }
+
+  /* ── LINE ITEMS TABLE ── */
+  .line-items-table { width: 100%; border-collapse: collapse; }
+  .line-items-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: #f0ece6;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .line-items-table td { padding: 6px 4px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+  .line-items-table td input, .line-items-table td select {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .line-items-table .calc-field {
+    background: #f5f0e8;
+    border-color: var(--border-light);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  .total-row td {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f0ece6;
+    padding: 8px 10px;
+    border-top: 2px solid var(--border);
+  }
+  .del-row-btn {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 16px; line-height: 1; padding: 4px;
+    transition: color 0.15s;
+  }
+  .del-row-btn:hover { color: var(--error); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border: none; cursor: pointer; border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--espresso); color: var(--cream); }
+  .btn-primary:hover { background: var(--copper); }
+  .btn-copper { background: var(--copper); color: white; }
+  .btn-copper:hover { background: var(--copper-light); }
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--copper); color: var(--copper); }
+  .btn-sm { padding: 6px 14px; font-size: 10px; }
+  .btn-danger { background: none; border: 1px solid var(--error); color: var(--error); }
+  .btn-danger:hover { background: var(--error); color: white; }
+
+  .actions-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* ── ADDRESS BOOK ── */
+  .address-book-modal {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(26, 22, 18, 0.6);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+  }
+  .address-book-modal.open { display: flex; }
+  .modal-box {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    background: var(--espresso);
+    color: var(--cream);
+    padding: 14px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; top: 0;
+  }
+  .modal-close { background: none; border: none; color: var(--cream); font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-body { padding: 24px; }
+  .customer-card {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .customer-card:hover { border-color: var(--copper); background: var(--copper-pale); }
+  .customer-card .name { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+  .customer-card .meta { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+  .customer-card .country-badge {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    padding: 2px 8px;
+    background: var(--espresso); color: var(--cream);
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── DOC NUMBER DISPLAY ── */
+  .doc-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--copper);
+    letter-spacing: 0.04em;
+  }
+  .doc-number-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── STATEMENT PREVIEW ── */
+  .origin-statement {
+    background: #f0ece6;
+    border-left: 3px solid var(--copper);
+    padding: 12px 16px;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--muted);
+    border-radius: 0 2px 2px 0;
+    margin-top: 8px;
+  }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 0 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  /* ── STATUS CHIPS ── */
+  .chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .chip-rex { background: #d4edda; color: var(--success); }
+  .chip-std { background: #e2d9ce; color: var(--muted); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 32px; right: 32px; z-index: 999;
+    background: var(--espresso); color: var(--cream);
+    padding: 14px 20px;
+    border-left: 4px solid var(--copper);
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    transform: translateY(80px) opacity(0);
+    transition: transform 0.3s, opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── LINKED FIELD ── */
+  .linked-note { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--copper); letter-spacing: 0.04em; margin-top: 3px; }
+
+  @media (max-width: 768px) {
+    .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+    .app-header { padding: 14px 16px; }
+    .app-body { padding: 20px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">KAFFE <span>●</span> BUENO</div>
+  <div class="header-meta">Shipping Documents Generator · Operations</div>
+</header>
+
+<div class="app-body">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('pi', this)">Proforma Invoice</button>
+    <button class="tab-btn" onclick="switchTab('pl', this)">Packing List</button>
+    <button class="tab-btn" onclick="switchTab('masterdata', this)">Master Data</button>
+    <button class="tab-btn" onclick="switchTab('addressbook', this)">Address Book</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PROFORMA INVOICE TAB
+  ═══════════════════════════════════════════════════ -->
+  <div class="tab-pane active" id="tab-pi">
+
+    <!-- Document Number -->
+    <div class="card">
+      <div class="card-header">
+        <span>Document Reference</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-3">
+          <div class="field">
+            <label>Proforma Invoice No.</label>
+            <div class="doc-number" id="pi-number-display">26-0600</div>
+            <div class="doc-number-meta">Auto-incremented · Next: <span id="pi-next-preview"></span></div>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="text" id="pi-date" readonly>
+          </div>
+          <div class="field">
+            <label>Currency Code <span class="required">*</span></label>
+            <select id="pi-currency" onchange="updateOriginStatement()">
+              <option>USD</option>
+              <option>EUR</option>
+              <option>DKK</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seller (fixed) -->
+    <div class="card">
+      <div class="card-header"><span>Seller — Kaffe Bueno ApS</span><span style="font-size:9px;opacity:0.6">CONSTANT</span></div>
+      <div class="card-body">
+        <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8;">
+          Kaffe Bueno ApS · Islevdalvej 211, tv · 2610 Rødovre · Denmark<br>
+          Email: camilo@kaffebueno.com · Phone: +45 71 46 00 21 · VAT: DK-37894036
+        </div>
+      </div>
+    </div>
+
+    <!-- Buyer -->
+    <div class="card">
+      <div class="card-header">
+        <span>Buyer</span>
+        <button class="btn btn-sm" style="background:var(--copper);color:white;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:none;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="openAddressBook('pi-buyer')">Address Book</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Company Name <span class="required">*</span></label>
+            <input type="text" id="pi-buyer-company" placeholder="Company name" oninput="syncBuyerToDelivery('pi');updateOriginStatement()">
+          </div>
+          <div class="field">
+            <label>VAT / RUT / Tax No.</label>
+            <input type="text" id="pi-buyer-vat" placeholder="e.g. RUT 77.641.109-6">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>Address (billing)</label>
+            <input type="text" id="pi-buyer-address" placeholder="Street address">
+          </div>
+          <div class="field">
+            <label>City (billing)</label>
+            <input type="text" id="pi-buyer-city" placeholder="City" oninput="updateCityOfLiability()">
+          </div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:12px;">
+          <div class="field">
+            <label>Country <span class="required">*</span></label>
+            <input type="text" id="pi-buyer-country" placeholder="Country" oninput="updateOriginStatement();updateCityOfLiability()">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="pi-buyer-email" placeholder="contact@company.com">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="pi-buyer-phone" placeholder="+56 2 ...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Address -->
+    <div class="card">
+      <div class="card-header">
+        <span>Delivery Address</span>
+        <button class="btn btn-sm" style="background:transparent;color:#a89880;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid #555;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="copyBuyerToDelivery('pi')">Copy from Buyer</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Company Name</label>
+            <input type="text" id="pi-del-company" placeholder="Delivery company name">
+          </div>
+          <div class="field">
+            <label>Address</label>
+            <input type="text" id="pi-del-address" placeholder="Street address">
+          </div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:12px;">
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="pi-del-city" placeholder="City">
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="pi-del-country" placeholder="Country">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="pi-del-email" placeholder="delivery@company.com">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="pi-del-phone" placeholder="+56 2 ...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Line Items -->
+    <div class="card">
+      <div class="card-header">
+        <span>Description of Goods</span>
+        <button class="btn btn-sm" style="background:var(--copper);color:white;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:none;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="addPIRow()">+ Add Line</button>
+      </div>
+      <div class="card-body" style="padding: 0; overflow-x: auto;">
+        <table class="line-items-table" id="pi-items-table">
+          <thead>
+            <tr>
+              <th style="width:160px">Description</th>
+              <th style="width:90px">Unit Value</th>
+              <th style="width:80px">Qty</th>
+              <th style="width:100px">Subtotal Value</th>
+              <th style="width:90px">Unit Weight (kg)</th>
+              <th style="width:110px">Subtotal Weight</th>
+              <th style="width:150px">HS / Commodity Code</th>
+              <th style="width:30px"></th>
+            </tr>
+          </thead>
+          <tbody id="pi-items-body">
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="2">TOTAL</td>
+              <td id="pi-total-qty">—</td>
+              <td id="pi-total-subtotal">—</td>
+              <td></td>
+              <td id="pi-total-weight">—</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trade Terms -->
+    <div class="card">
+      <div class="card-header"><span>Trade &amp; Export Terms</span></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-4">
+          <div class="field">
+            <label>Reason for Export</label>
+            <select id="pi-reason">
+              <option>Commercial Order</option>
+              <option>Commercial Sample</option>
+              <option>Non-Commercial Sample</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Terms of Trade</label>
+            <select id="pi-incoterm">
+              <option>CIF</option>
+              <option>EXW</option>
+              <option>DAP</option>
+              <option>DDP</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>City of Liability</label>
+            <input type="text" id="pi-city-liability" readonly>
+            <div class="linked-note">← Auto from buyer city</div>
+          </div>
+          <div class="field">
+            <label>Currency Code</label>
+            <input type="text" id="pi-currency-display" readonly>
+            <div class="linked-note">← Set above</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banking -->
+    <div class="card">
+      <div class="card-header"><span>Account &amp; Banking Information</span></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div>
+            <div class="section-divider">Account</div>
+            <div class="field" style="margin-bottom:12px;">
+              <label>Account Type</label>
+              <select id="pi-account-type" onchange="updateBankInfo()">
+                <option value="USD">USD Account</option>
+                <option value="EUR">EUR Account</option>
+                <option value="DKK">DKK Account</option>
+              </select>
+            </div>
+            <div class="form-grid form-grid-2">
+              <div class="field">
+                <label>Reg. no.</label>
+                <input type="text" id="pi-bank-reg" readonly>
+              </div>
+              <div class="field">
+                <label>Account no.</label>
+                <input type="text" id="pi-bank-acc" readonly>
+              </div>
+            </div>
+            <div class="field" style="margin-top:12px;">
+              <label>IBAN</label>
+              <input type="text" id="pi-bank-iban" readonly>
+            </div>
+            <div class="field" style="margin-top:12px;">
+              <label>BIC / SWIFT</label>
+              <input type="text" value="DABADKKK" readonly>
+            </div>
+          </div>
+          <div>
+            <div class="section-divider">Bank</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);line-height:2;background:#f0ece6;padding:14px;border-radius:2px;">
+              Danske Bank A/S<br>
+              Bernstorffsgade 40<br>
+              1577 Copenhagen<br>
+              Denmark
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Origin Statement -->
+    <div class="card">
+      <div class="card-header"><span>Preferential Origin Statement</span></div>
+      <div class="card-body">
+        <div id="pi-origin-chip" style="margin-bottom:10px;"></div>
+        <div class="origin-statement" id="pi-origin-statement"></div>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="card">
+      <div class="card-header"><span>Signature</span></div>
+      <div class="card-body">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Copenhagen, Denmark — <span id="pi-sig-date"></span></div>
+        <div style="height:60px;border-bottom:1px solid var(--border);width:300px;margin-bottom:8px;"></div>
+        <div style="font-size:12px;color:var(--muted);">Camilo Fernandez, CFO — Kaffe Bueno ApS</div>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-primary" onclick="exportPDF('pi')">↓ Export to PDF</button>
+      <button class="btn btn-ghost" onclick="resetPI()">Reset Form</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PACKING LIST TAB
+  ═══════════════════════════════════════════════════ -->
+  <div class="tab-pane" id="tab-pl">
+
+    <!-- Document Number -->
+    <div class="card">
+      <div class="card-header"><span>Document Reference</span></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-4">
+          <div class="field">
+            <label>Packing List No.</label>
+            <div class="doc-number" id="pl-number-display">26040001</div>
+            <div class="doc-number-meta">Auto-incremented (yymmxxxx)</div>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="text" id="pl-date" readonly>
+          </div>
+          <div class="field">
+            <label>Customer No.</label>
+            <input type="text" id="pl-customer-no" placeholder="e.g. KB-CL-001">
+          </div>
+          <div class="field">
+            <label>PO No.</label>
+            <input type="text" id="pl-po-no" placeholder="e.g. KB-002 (partial)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seller (fixed) -->
+    <div class="card">
+      <div class="card-header"><span>Seller — Kaffe Bueno ApS</span><span style="font-size:9px;opacity:0.6">CONSTANT</span></div>
+      <div class="card-body">
+        <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8;">
+          Kaffe Bueno ApS · Islevdalvej 211, tv · 2610 Rødovre · Denmark<br>
+          Email: camilo@kaffebueno.com · Phone: +45 71 46 00 21 · VAT: DK-37894036
+        </div>
+      </div>
+    </div>
+
+    <!-- Buyer -->
+    <div class="card">
+      <div class="card-header">
+        <span>Buyer</span>
+        <button class="btn btn-sm" style="background:var(--copper);color:white;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:none;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="openAddressBook('pl-buyer')">Address Book</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Company Name <span class="required">*</span></label>
+            <input type="text" id="pl-buyer-company" placeholder="Company name" oninput="syncBuyerToDelivery('pl')">
+          </div>
+          <div class="field">
+            <label>VAT / RUT / Tax No.</label>
+            <input type="text" id="pl-buyer-vat" placeholder="e.g. RUT 77.641.109-6">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>Address (billing)</label>
+            <input type="text" id="pl-buyer-address" placeholder="Street address">
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="pl-buyer-city" placeholder="City">
+          </div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:12px;">
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="pl-buyer-country" placeholder="Country">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="pl-buyer-email" placeholder="contact@company.com">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="pl-buyer-phone" placeholder="+56 2 ...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Address -->
+    <div class="card">
+      <div class="card-header">
+        <span>Delivery Address</span>
+        <button class="btn btn-sm" style="background:transparent;color:#a89880;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:1px solid #555;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="copyBuyerToDelivery('pl')">Copy from Buyer</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Company Name</label>
+            <input type="text" id="pl-del-company" placeholder="Delivery company name">
+          </div>
+          <div class="field">
+            <label>Address</label>
+            <input type="text" id="pl-del-address" placeholder="Street address">
+          </div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:12px;">
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="pl-del-city" placeholder="City">
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="pl-del-country" placeholder="Country">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="pl-del-email" placeholder="delivery@company.com">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="pl-del-phone" placeholder="+56 2 ...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Terms -->
+    <div class="card">
+      <div class="card-header"><span>Delivery Terms</span></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Delivery Terms (Incoterm)</label>
+            <select id="pl-incoterm">
+              <option>CIF</option>
+              <option>EXW</option>
+              <option>DAP</option>
+              <option>DDP</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Packaging Groups -->
+    <div class="card">
+      <div class="card-header">
+        <span>Goods &amp; Packaging</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm" style="background:var(--copper);color:white;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:none;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="addPLGroup()">+ Add Package</button>
+        </div>
+      </div>
+      <div class="card-body" id="pl-groups-body" style="padding:16px;">
+        <!-- Groups rendered here -->
+      </div>
+      <div style="padding:0 16px 16px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tfoot>
+            <tr class="total-row">
+              <td style="padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;background:#f0ece6;border-top:2px solid var(--border);" colspan="4">TOTAL</td>
+              <td style="padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;background:#f0ece6;border-top:2px solid var(--border);" id="pl-total-qty">—</td>
+              <td style="padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;background:#f0ece6;border-top:2px solid var(--border);" id="pl-total-net">—</td>
+              <td style="padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;background:#f0ece6;border-top:2px solid var(--border);" id="pl-total-gross">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="card">
+      <div class="card-header"><span>Signature</span></div>
+      <div class="card-body">
+        <div style="height:60px;border-bottom:1px solid var(--border);width:300px;margin-bottom:8px;"></div>
+        <div style="font-size:12px;color:var(--muted);">Kaffe Bueno ApS</div>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-primary" onclick="exportPDF('pl')">↓ Export to PDF</button>
+      <button class="btn btn-ghost" onclick="resetPL()">Reset Form</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       MASTER DATA TAB
+  ═══════════════════════════════════════════════════ -->
+  <div class="tab-pane" id="tab-masterdata">
+
+    <!-- ── SECTION 1: Customer ── -->
+    <div class="card">
+      <div class="card-header"><span>1 — Customer</span></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2" style="margin-bottom:16px;">
+          <div class="field">
+            <label>Load from Address Book</label>
+            <select id="md-customer-select" onchange="mdLoadCustomer()">
+              <option value="">— Select saved customer —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid form-grid-2">
+          <div class="field"><label>Company Name <span class="required">*</span></label><input type="text" id="md-company" placeholder="Company name"></div>
+          <div class="field"><label>VAT / RUT / Tax No.</label><input type="text" id="md-vat"></div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:12px;">
+          <div class="field"><label>Billing Address</label><input type="text" id="md-address"></div>
+          <div class="field"><label>City</label><input type="text" id="md-city"></div>
+          <div class="field"><label>Country <span class="required">*</span></label><input type="text" id="md-country"></div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field"><label>Email</label><input type="email" id="md-email"></div>
+          <div class="field"><label>Phone</label><input type="tel" id="md-phone"></div>
+        </div>
+        <div class="section-divider" style="margin-top:20px;">Delivery Address (if different)</div>
+        <div class="form-grid form-grid-2">
+          <div class="field"><label>Company Name</label><input type="text" id="md-del-company"></div>
+          <div class="field"><label>Address</label><input type="text" id="md-del-address"></div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:12px;">
+          <div class="field"><label>City</label><input type="text" id="md-del-city"></div>
+          <div class="field"><label>Country</label><input type="text" id="md-del-country"></div>
+          <div class="field"><label>Email</label><input type="email" id="md-del-email"></div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field"><label>Phone</label><input type="tel" id="md-del-phone"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: Shipment Terms ── -->
+    <div class="card">
+      <div class="card-header"><span>2 — Shipment Terms</span></div>
+      <div class="card-body">
+        <div class="form-grid form-grid-4">
+          <div class="field"><label>Incoterm</label>
+            <select id="md-incoterm"><option>CIF</option><option>EXW</option><option>DAP</option><option>DDP</option></select>
+          </div>
+          <div class="field"><label>Currency</label>
+            <select id="md-currency"><option>USD</option><option>EUR</option><option>DKK</option></select>
+          </div>
+          <div class="field"><label>Reason for Export</label>
+            <select id="md-reason"><option>Commercial Order</option><option>Commercial Sample</option><option>Non-Commercial Sample</option></select>
+          </div>
+          <div class="field"><label>Account</label>
+            <select id="md-account"><option value="USD">USD Account</option><option value="EUR">EUR Account</option><option value="DKK">DKK Account</option></select>
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field"><label>Customer No.</label><input type="text" id="md-customer-no" placeholder="KB-CL-001"></div>
+          <div class="field"><label>PO No.</label><input type="text" id="md-po-no" placeholder="KB-002"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: Product Lines ── -->
+    <div class="card">
+      <div class="card-header">
+        <span>3 — Product Lines <span style="font-size:9px;opacity:0.6;font-weight:400;">→ Proforma Invoice goods rows + PL product items</span></span>
+        <button onclick="mdAddProduct()" style="background:var(--copper);color:white;border:none;font-family:'DM Mono',monospace;font-size:9px;padding:5px 12px;border-radius:2px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">+ Add Product</button>
+      </div>
+      <div class="card-body" style="padding:0;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;" id="md-products-table">
+          <thead>
+            <tr style="background:#f0ece6;">
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:160px;">Product</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:155px;">HS / Commodity Code</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:90px;">Qty (units)</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:110px;">Unit Weight (kg)</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:110px;">Price/kg (€)</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:100px;">Net Wt Total</th>
+              <th style="width:30px;border-bottom:1px solid var(--border);"></th>
+            </tr>
+          </thead>
+          <tbody id="md-products-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: Packaging ── -->
+    <div class="card">
+      <div class="card-header">
+        <span>4 — Packaging <span style="font-size:9px;opacity:0.6;font-weight:400;">→ Packing List package groups</span></span>
+        <button onclick="mdAddPackage()" style="background:var(--copper);color:white;border:none;font-family:'DM Mono',monospace;font-size:9px;padding:5px 12px;border-radius:2px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">+ Add Package</button>
+      </div>
+      <div class="card-body" style="padding:0;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;" id="md-packages-table">
+          <thead>
+            <tr style="background:#f0ece6;">
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:100px;">Type</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:130px;">Dimensions (cm)</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:90px;">Qty of Pkgs</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;width:110px;">Gross kg/pkg</th>
+              <th style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;">Products in this package</th>
+              <th style="width:30px;border-bottom:1px solid var(--border);"></th>
+            </tr>
+          </thead>
+          <tbody id="md-packages-body"></tbody>
+        </table>
+      </div>
+      <div style="padding:10px 16px 8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">
+        Select which products (from Section 3) are packed in each package. Products not assigned to a package will be skipped in the Packing List.
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-primary" onclick="mdApply()">→ Apply to Both Documents</button>
+      <button class="btn btn-ghost" onclick="mdClear()">Clear All</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       ADDRESS BOOK TAB
+  ═══════════════════════════════════════════════════ -->
+  <div class="tab-pane" id="tab-addressbook">
+    <div class="card">
+      <div class="card-header">
+        <span>Customer Address Book</span>
+        <button class="btn btn-sm" style="background:var(--copper);color:white;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:none;padding:5px 12px;border-radius:2px;cursor:pointer;" onclick="openAddCustomerForm()">+ New Customer</button>
+      </div>
+      <div class="card-body" id="ab-list-body">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <!-- New/Edit Customer Form -->
+    <div class="card" id="ab-form-card" style="display:none;">
+      <div class="card-header"><span id="ab-form-title">New Customer</span></div>
+      <div class="card-body">
+        <input type="hidden" id="ab-edit-index" value="-1">
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Company Name <span class="required">*</span></label>
+            <input type="text" id="ab-company" placeholder="Company name">
+          </div>
+          <div class="field">
+            <label>VAT / RUT / Tax No.</label>
+            <input type="text" id="ab-vat" placeholder="">
+          </div>
+        </div>
+        <div class="section-divider" style="margin-top:16px;">Billing Address</div>
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Street Address</label>
+            <input type="text" id="ab-address" placeholder="Street, number, apt">
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="ab-city" placeholder="City">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>Country <span class="required">*</span></label>
+            <input type="text" id="ab-country" placeholder="Country" oninput="checkREXCountry()">
+          </div>
+          <div class="field">
+            <label>Postcode</label>
+            <input type="text" id="ab-postcode" placeholder="Postal code">
+          </div>
+        </div>
+        <div class="section-divider" style="margin-top:16px;">Delivery Address (if different)</div>
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Street Address</label>
+            <input type="text" id="ab-del-address" placeholder="Leave blank to use billing">
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="ab-del-city" placeholder="">
+          </div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>Country</label>
+            <input type="text" id="ab-del-country" placeholder="">
+          </div>
+          <div class="field">
+            <label>Email (delivery)</label>
+            <input type="email" id="ab-del-email" placeholder="">
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Phone (delivery)</label>
+          <input type="tel" id="ab-del-phone" placeholder="">
+        </div>
+        <div class="section-divider" style="margin-top:16px;">Contact</div>
+        <div class="form-grid form-grid-2">
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="ab-email" placeholder="contact@company.com">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="ab-phone" placeholder="+XX X XXXX XXXX">
+          </div>
+        </div>
+        <div id="ab-rex-note" style="margin-top:16px;display:none;" class="origin-statement"></div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+          <button class="btn btn-copper" onclick="saveCustomer()">Save Customer</button>
+          <button class="btn btn-ghost" onclick="cancelCustomerForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADDRESS BOOK MODAL -->
+<div class="address-book-modal" id="ab-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>Select Customer</span>
+      <button class="modal-close" onclick="closeAddressBook()">×</button>
+    </div>
+    <div class="modal-body" id="ab-modal-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+const STATE = {
+  piCounter: parseInt(localStorage.getItem('kb_pi_counter') || '600'),
+  plCounters: JSON.parse(localStorage.getItem('kb_pl_counters') || '{}'),
+  customers: JSON.parse(localStorage.getItem('kb_customers') || '[]'),
+  abTarget: null
+};
+
+// Pre-seed ASCOEX if no customers
+if (STATE.customers.length === 0) {
+  STATE.customers = [{
+    company: 'IMPORTADORA Y DISTRIBUIDORA ASCOEX SPA',
+    vat: 'RUT 77.641.109-6',
+    address: 'Padre Mariano 181, Office 203',
+    city: 'Providencia',
+    country: 'Chile',
+    postcode: '',
+    email: 'marianela.gonzalez@ascoex.com',
+    phone: '(562) 223356629',
+    delCompany: 'IMPORTADORA Y DISTRIBUIDORA ASCOEX SPA',
+    delAddress: 'El Pinar 205',
+    delCity: 'San Joaquín, Santiago',
+    delCountry: 'Chile',
+    delEmail: 'mariette.palma@ascoex.com',
+    delPhone: '+56 2 2335 6629'
+  }];
+  saveCustomers();
+}
+
+const PRODUCTS = ['KAFFOIL','KAFFOIL-R','KAFFAGE','KAFFAGE-D','KAFFAGE-B','KAFFAGE-BD','KAGROW'];
+const PRODUCT_UNIT_VALUES = {
+  'KAFFOIL': 35, 'KAFFOIL-R': 35,
+  'KAFFAGE': 80, 'KAFFAGE-D': 80, 'KAFFAGE-B': 80, 'KAFFAGE-BD': 80,
+  'KAGROW': 80
+};
+const PRODUCT_HS = {
+  'KAFFOIL': '2101.12.92.00', 'KAFFOIL-R': '2101.12.92.00',
+  'KAFFAGE': '2101.12.92.00', 'KAFFAGE-D': '2101.12.92.00',
+  'KAFFAGE-B': '2101.12.92.00', 'KAFFAGE-BD': '2101.12.92.00',
+  'KAGROW': '0901.90.00.00'
+};
+const PRODUCT_CODES = {
+  'KAFFOIL': '010201', 'KAFFOIL-R': '010301',
+  'KAFFAGE': '030101', 'KAFFAGE-D': '030102',
+  'KAFFAGE-B': '030201', 'KAFFAGE-BD': '030202',
+  'KAGROW': '040101'
+};
+const HS_CODES = ['2101.12.92.00','0901.90.00.00','3402.90.19.00'];
+const BANK_DATA = {
+  USD: { reg: '3001', acc: '3002169835', iban: 'DK5630003002169835' },
+  EUR: { reg: '3001', acc: '3002074648', iban: 'DK9030003002074648' },
+  DKK: { reg: '3409', acc: '12665318',   iban: 'DK8430000012665318' }
+};
+const REX_COUNTRIES = ['Chile','Canada','United Kingdom','UK'];
+const REX_STATEMENT = 'The exporter of the products covered by this document (Customs Registration REX No: DKREX37894036) declares that, except where otherwise clearly indicated, these products are of European Union preferential origin.';
+const STD_STATEMENT = 'The exporter of the products covered by this document declares that, except where otherwise clearly indicated, these products are of European Union preferential origin.';
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+function init() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }).replace(/\//g, '/');
+  document.getElementById('pi-date').value = dateStr;
+  document.getElementById('pl-date').value = dateStr;
+  document.getElementById('pi-sig-date').textContent = dateStr;
+
+  // PI number
+  const piNum = '26-0' + String(STATE.piCounter).padStart(3, '0');
+  document.getElementById('pi-number-display').textContent = piNum;
+  document.getElementById('pi-next-preview').textContent = '26-0' + String(STATE.piCounter + 1).padStart(3, '0');
+
+  // PL number
+  const plNum = getPLNumber();
+  document.getElementById('pl-number-display').textContent = plNum;
+
+  updateBankInfo();
+  updateOriginStatement();
+  renderAddressBook();
+
+  // Add initial rows
+  addPIRow();
+  addPLGroup();
+  mdRefreshCustomerDropdown();
+}
+
+function getPLNumber() {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const key = yy + mm;
+  if (!STATE.plCounters[key]) STATE.plCounters[key] = 1;
+  const seq = String(STATE.plCounters[key]).padStart(4, '0');
+  return yy + mm + seq;
+}
+
+// ════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════════════════════
+//  PROFORMA INVOICE — LINE ITEMS
+// ════════════════════════════════════════════════════
+let piRowCount = 0;
+function addPIRow() {
+  piRowCount++;
+  const rid = 'pi-row-' + piRowCount;
+  const tbody = document.getElementById('pi-items-body');
+  const tr = document.createElement('tr');
+  tr.id = rid;
+  tr.innerHTML = `
+    <td>
+      <select onchange="onPIProductChange(this, '${rid}')" style="width:100%;">
+        ${PRODUCTS.map(p => `<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <input type="hidden" id="${rid}-pkgprice" value="35">
+      <input type="number" id="${rid}-uv" value="" step="0.0001" oninput="recalcPISV('${rid}')" style="width:80px;border:1px solid var(--border);background:white;padding:6px 8px;font-family:DM Mono,monospace;font-size:11px;" title="Auto-calculated (price/kg × unit weight) — editable for custom pricing">
+    </td>
+    <td><input type="number" id="${rid}-qty" min="1" value="" placeholder="0" oninput="calcPIRow('${rid}')" style="width:70px;"></td>
+    <td><input type="text" class="calc-field" id="${rid}-sv" value="" readonly style="width:90px;font-family:DM Mono,monospace;font-size:11px;"></td>
+    <td><input type="number" id="${rid}-uw" min="0" step="0.0001" value="" placeholder="kg" oninput="calcPIRow('${rid}')" style="width:80px;" title="Weight per unit in kg (e.g. 0.03 = 30g)"></td>
+    <td><input type="text" class="calc-field" id="${rid}-sw" value="" readonly style="width:100px;font-family:DM Mono,monospace;font-size:11px;"></td>
+    <td>
+      <select id="${rid}-hs" style="width:100%;font-family:DM Mono,monospace;font-size:11px;">
+        ${HS_CODES.map(h => `<option value="${h}">${h}</option>`).join('')}
+      </select>
+    </td>
+    <td><button class="del-row-btn" onclick="delPIRow('${rid}')">×</button></td>
+  `;
+  tbody.appendChild(tr);
+  onPIProductChange(tr.querySelector('select'), rid);
+}
+
+function onPIProductChange(sel, rid) {
+  const prod = sel.value;
+  const pricePerKg = PRODUCT_UNIT_VALUES[prod] || 35;
+  document.getElementById(rid + '-pkgprice').value = pricePerKg;
+  const hsCode = PRODUCT_HS[prod] || '2101.12.92.00';
+  const hsSelect = document.getElementById(rid + '-hs');
+  for (let i = 0; i < hsSelect.options.length; i++) {
+    if (hsSelect.options[i].value === hsCode) { hsSelect.selectedIndex = i; break; }
+  }
+  calcPIRow(rid);
+}
+
+function calcPIRow(rid) {
+  const qty = parseFloat(document.getElementById(rid + '-qty').value) || 0;
+  const uw  = parseFloat(document.getElementById(rid + '-uw').value)  || 0;
+  // Subtotal weight = qty × unit weight (kg)
+  const sw = qty * uw;
+  // Unit value = price_per_kg × unit weight (cost of one unit)
+  const pricePerKg = parseFloat(document.getElementById(rid + '-pkgprice').value) || 0;
+  const uv = pricePerKg * uw;
+  // Subtotal value = unit value × qty  (= price_per_kg × subtotal_weight)
+  const sv = uv * qty;
+  document.getElementById(rid + '-uv').value  = uv  ? uv.toFixed(4)  : '';
+  document.getElementById(rid + '-sv').value  = sv  ? sv.toFixed(2)  : '';
+  document.getElementById(rid + '-sw').value  = sw  ? sw.toFixed(4)  : '';
+  updatePITotals();
+}
+
+function delPIRow(rid) {
+  const tr = document.getElementById(rid);
+  if (tr) { tr.remove(); updatePITotals(); }
+}
+
+function updatePITotals() {
+  const tbody = document.getElementById('pi-items-body');
+  let totalQty = 0, totalSV = 0, totalSW = 0;
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const rid = tr.id;
+    totalQty += parseFloat(document.getElementById(rid + '-qty')?.value) || 0;
+    totalSV  += parseFloat(document.getElementById(rid + '-sv')?.value)  || 0;
+    totalSW  += parseFloat(document.getElementById(rid + '-sw')?.value)  || 0;
+  });
+  document.getElementById('pi-total-qty').textContent = totalQty || '—';
+  document.getElementById('pi-total-subtotal').textContent = totalSV ? totalSV.toFixed(2) : '—';
+  document.getElementById('pi-total-weight').textContent = totalSW ? totalSW.toFixed(3) : '—';
+}
+
+// ════════════════════════════════════════════════════
+//  PACKING LIST — LINE ITEMS (legacy stub — replaced by group system)
+// ════════════════════════════════════════════════════
+let plRowCount = 0;
+function addPLRow() {
+  plRowCount++;
+  const rid = 'pl-row-' + plRowCount;
+  const tbody = document.getElementById('pl-items-body');
+  const tr = document.createElement('tr');
+  tr.id = rid;
+  tr.innerHTML = `
+    <td>
+      <select id="${rid}-hs" style="width:130px;font-family:DM Mono,monospace;font-size:11px;">
+        ${HS_CODES.map(h => `<option value="${h}">${h}</option>`).join('')}
+      </select>
+    </td>
+    <td><input type="text" class="calc-field" id="${rid}-code" value="010201" readonly style="width:90px;font-family:DM Mono,monospace;font-size:11px;"></td>
+    <td>
+      <select onchange="onPLProductChange(this, '${rid}')" style="width:100%;">
+        ${PRODUCTS.map(p => `<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </td>
+    <td><input type="text" class="calc-field" value="Denmark" readonly style="width:90px;font-size:11px;"></td>
+    <td>
+      <select id="${rid}-type" style="width:90px;">
+        <option>Pallet</option>
+        <option>Box</option>
+        <option>IBC</option>
+      </select>
+    </td>
+    <td><input type="text" id="${rid}-dims" placeholder="120x80x76" style="width:110px;"></td>
+    <td><input type="number" id="${rid}-qty" min="1" value="" placeholder="0" oninput="updatePLTotals()" style="width:70px;"></td>
+    <td><input type="number" id="${rid}-net" min="0" step="0.001" value="" placeholder="0" oninput="updatePLTotals()" style="width:90px;"></td>
+    <td><input type="number" id="${rid}-gross" min="0" step="0.001" value="" placeholder="0" oninput="updatePLTotals()" style="width:100px;"></td>
+    <td><button class="del-row-btn" onclick="delPLRow('${rid}')">×</button></td>
+  `;
+  tbody.appendChild(tr);
+  onPLProductChange(tr.querySelector('select[onchange]'), rid);
+}
+
+function onPLProductChange(sel, rid) {
+  const prod = sel.value;
+  const code = PRODUCT_CODES[prod] || '';
+  document.getElementById(rid + '-code').value = code;
+  const hsCode = PRODUCT_HS[prod] || '2101.12.92.00';
+  const hsSelect = document.getElementById(rid + '-hs');
+  for (let i = 0; i < hsSelect.options.length; i++) {
+    if (hsSelect.options[i].value === hsCode) { hsSelect.selectedIndex = i; break; }
+  }
+}
+
+function delPLRow(rid) {
+  const tr = document.getElementById(rid);
+  if (tr) { tr.remove(); updatePLTotals(); }
+}
+
+function updatePLTotals() {
+  const tbody = document.getElementById('pl-items-body');
+  let totalQty = 0, totalNet = 0, totalGross = 0;
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const rid = tr.id;
+    totalQty   += parseFloat(document.getElementById(rid + '-qty')?.value)   || 0;
+    totalNet   += parseFloat(document.getElementById(rid + '-net')?.value)   || 0;
+    totalGross += parseFloat(document.getElementById(rid + '-gross')?.value) || 0;
+  });
+  document.getElementById('pl-total-qty').textContent = totalQty || '—';
+  document.getElementById('pl-total-net').textContent = totalNet ? totalNet.toFixed(3) : '—';
+  document.getElementById('pl-total-gross').textContent = totalGross ? totalGross.toFixed(3) : '—';
+}
+
+// ════════════════════════════════════════════════════
+//  BANKING / LINKED FIELDS
+// ════════════════════════════════════════════════════
+function updateBankInfo() {
+  const type = document.getElementById('pi-account-type').value;
+  const data = BANK_DATA[type];
+  document.getElementById('pi-bank-reg').value = data.reg;
+  document.getElementById('pi-bank-acc').value = data.acc;
+  document.getElementById('pi-bank-iban').value = data.iban;
+  // Sync currency display
+  const currency = document.getElementById('pi-currency').value;
+  document.getElementById('pi-currency-display').value = currency;
+}
+
+function updateCityOfLiability() {
+  const city = document.getElementById('pi-buyer-city').value;
+  document.getElementById('pi-city-liability').value = city;
+  // Also update sig date display
+  document.getElementById('pi-currency-display').value = document.getElementById('pi-currency').value;
+}
+
+function updateOriginStatement() {
+  const country = document.getElementById('pi-buyer-country').value.trim();
+  const isREX = REX_COUNTRIES.some(c => country.toLowerCase().includes(c.toLowerCase()));
+  const stmt = isREX ? REX_STATEMENT : STD_STATEMENT;
+  document.getElementById('pi-origin-statement').textContent = stmt;
+  const chip = document.getElementById('pi-origin-chip');
+  chip.innerHTML = isREX
+    ? '<span class="chip chip-rex">REX Statement — Chile / Canada / UK</span>'
+    : '<span class="chip chip-std">Standard EU Origin Statement</span>';
+  document.getElementById('pi-currency-display').value = document.getElementById('pi-currency').value;
+}
+
+// ════════════════════════════════════════════════════
+//  BUYER → DELIVERY SYNC
+// ════════════════════════════════════════════════════
+function syncBuyerToDelivery(prefix) {
+  // Only auto-sync company name
+  const company = document.getElementById(prefix + '-buyer-company').value;
+  if (!document.getElementById(prefix + '-del-company').value) {
+    document.getElementById(prefix + '-del-company').value = company;
+  }
+}
+
+function copyBuyerToDelivery(prefix) {
+  const fields = [['company','company'],['address','address'],['city','city'],['country','country'],['email','email'],['phone','phone']];
+  fields.forEach(([b, d]) => {
+    const src = document.getElementById(prefix + '-buyer-' + b);
+    const dst = document.getElementById(prefix + '-del-' + d);
+    if (src && dst) dst.value = src.value;
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  ADDRESS BOOK
+// ════════════════════════════════════════════════════
+function saveCustomers() {
+  localStorage.setItem('kb_customers', JSON.stringify(STATE.customers));
+}
+
+function renderAddressBook() {
+  const body = document.getElementById('ab-list-body');
+  if (STATE.customers.length === 0) {
+    body.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px 0;">No customers saved yet. Click "+ New Customer" to add one.</p>';
+    return;
+  }
+  body.innerHTML = STATE.customers.map((c, i) => `
+    <div class="customer-card" onclick="editCustomer(${i})">
+      <div style="flex:1;">
+        <div class="name">${c.company}</div>
+        <div class="meta">${c.address || ''}${c.city ? ', ' + c.city : ''}${c.country ? ' — ' + c.country : ''}</div>
+        <div class="meta" style="margin-top:3px;">${c.email || ''} ${c.phone ? '· ' + c.phone : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <span class="country-badge">${c.country || '?'}</span>
+        <button onclick="event.stopPropagation();deleteCustomer(${i})" style="background:none;border:1px solid var(--border);border-radius:2px;padding:2px 8px;font-size:10px;color:var(--muted);cursor:pointer;font-family:DM Mono,monospace;" onmouseover="this.style.borderColor='var(--error)';this.style.color='var(--error)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddCustomerForm() {
+  document.getElementById('ab-form-card').style.display = 'block';
+  document.getElementById('ab-form-title').textContent = 'New Customer';
+  document.getElementById('ab-edit-index').value = '-1';
+  ['company','vat','address','city','country','postcode','email','phone','del-address','del-city','del-country','del-email','del-phone'].forEach(f => {
+    const el = document.getElementById('ab-' + f.replace('-','-'));
+    if (el) el.value = '';
+  });
+  document.getElementById('ab-rex-note').style.display = 'none';
+}
+
+function editCustomer(i) {
+  const c = STATE.customers[i];
+  document.getElementById('ab-form-card').style.display = 'block';
+  document.getElementById('ab-form-title').textContent = 'Edit Customer';
+  document.getElementById('ab-edit-index').value = i;
+  document.getElementById('ab-company').value = c.company || '';
+  document.getElementById('ab-vat').value = c.vat || '';
+  document.getElementById('ab-address').value = c.address || '';
+  document.getElementById('ab-city').value = c.city || '';
+  document.getElementById('ab-country').value = c.country || '';
+  document.getElementById('ab-postcode').value = c.postcode || '';
+  document.getElementById('ab-email').value = c.email || '';
+  document.getElementById('ab-phone').value = c.phone || '';
+  document.getElementById('ab-del-address').value = c.delAddress || '';
+  document.getElementById('ab-del-city').value = c.delCity || '';
+  document.getElementById('ab-del-country').value = c.delCountry || '';
+  document.getElementById('ab-del-email').value = c.delEmail || '';
+  document.getElementById('ab-del-phone').value = c.delPhone || '';
+  checkREXCountry();
+  document.getElementById('ab-form-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function saveCustomer() {
+  const company = document.getElementById('ab-company').value.trim();
+  if (!company) { showToast('Company name is required.'); return; }
+  const c = {
+    company,
+    vat: document.getElementById('ab-vat').value.trim(),
+    address: document.getElementById('ab-address').value.trim(),
+    city: document.getElementById('ab-city').value.trim(),
+    country: document.getElementById('ab-country').value.trim(),
+    postcode: document.getElementById('ab-postcode').value.trim(),
+    email: document.getElementById('ab-email').value.trim(),
+    phone: document.getElementById('ab-phone').value.trim(),
+    delAddress: document.getElementById('ab-del-address').value.trim(),
+    delCity: document.getElementById('ab-del-city').value.trim(),
+    delCountry: document.getElementById('ab-del-country').value.trim(),
+    delEmail: document.getElementById('ab-del-email').value.trim(),
+    delPhone: document.getElementById('ab-del-phone').value.trim()
+  };
+  const idx = parseInt(document.getElementById('ab-edit-index').value);
+  if (idx >= 0) {
+    STATE.customers[idx] = c;
+    showToast('Customer updated.');
+  } else {
+    STATE.customers.push(c);
+    showToast('Customer saved.');
+  }
+  saveCustomers();
+  renderAddressBook();
+  mdRefreshCustomerDropdown();
+  document.getElementById('ab-form-card').style.display = 'none';
+}
+
+function deleteCustomer(i) {
+  if (!confirm('Delete this customer?')) return;
+  STATE.customers.splice(i, 1);
+  saveCustomers();
+  renderAddressBook();
+  mdRefreshCustomerDropdown();
+  showToast('Customer deleted.');
+}
+
+function cancelCustomerForm() {
+  document.getElementById('ab-form-card').style.display = 'none';
+}
+
+function checkREXCountry() {
+  const country = document.getElementById('ab-country').value.trim();
+  const isREX = REX_COUNTRIES.some(c => country.toLowerCase().includes(c.toLowerCase()));
+  const note = document.getElementById('ab-rex-note');
+  if (isREX && country) {
+    note.style.display = 'block';
+    note.textContent = 'REX preferential origin statement will be used for this customer.';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+// Modal address book
+function openAddressBook(target) {
+  STATE.abTarget = target;
+  const list = document.getElementById('ab-modal-list');
+  if (STATE.customers.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);padding:16px;font-size:12px;">No saved customers. Go to the Address Book tab to add one.</p>';
+  } else {
+    list.innerHTML = STATE.customers.map((c, i) => `
+      <div class="customer-card" onclick="selectCustomer(${i})">
+        <div style="flex:1;">
+          <div class="name">${c.company}</div>
+          <div class="meta">${c.address || ''}${c.city ? ', ' + c.city : ''}${c.country ? ' — ' + c.country : ''}</div>
+          <div class="meta" style="margin-top:3px;">${c.email || ''}</div>
+        </div>
+        <span class="country-badge">${c.country || '?'}</span>
+      </div>
+    `).join('');
+  }
+  document.getElementById('ab-modal').classList.add('open');
+}
+
+function closeAddressBook() {
+  document.getElementById('ab-modal').classList.remove('open');
+}
+
+function selectCustomer(i) {
+  const c = STATE.customers[i];
+  const prefix = STATE.abTarget === 'pi-buyer' ? 'pi' : 'pl';
+  document.getElementById(prefix + '-buyer-company').value = c.company || '';
+  document.getElementById(prefix + '-buyer-vat').value = c.vat || '';
+  document.getElementById(prefix + '-buyer-address').value = c.address || '';
+  document.getElementById(prefix + '-buyer-city').value = c.city || '';
+  document.getElementById(prefix + '-buyer-country').value = c.country || '';
+  document.getElementById(prefix + '-buyer-email').value = c.email || '';
+  document.getElementById(prefix + '-buyer-phone').value = c.phone || '';
+  // Delivery
+  document.getElementById(prefix + '-del-company').value = c.delAddress ? c.company : c.company;
+  document.getElementById(prefix + '-del-address').value = c.delAddress || c.address || '';
+  document.getElementById(prefix + '-del-city').value = c.delCity || c.city || '';
+  document.getElementById(prefix + '-del-country').value = c.delCountry || c.country || '';
+  document.getElementById(prefix + '-del-email').value = c.delEmail || c.email || '';
+  document.getElementById(prefix + '-del-phone').value = c.delPhone || c.phone || '';
+  if (prefix === 'pi') {
+    updateCityOfLiability();
+    updateOriginStatement();
+  }
+  closeAddressBook();
+  showToast('Customer loaded: ' + c.company);
+}
+
+// ════════════════════════════════════════════════════
+//  EXCEL EXPORT — ExcelJS (full native styling)
+// ════════════════════════════════════════════════════
+
+// Colour palette (ARGB format for ExcelJS)
+const CLR = {
+  ESPRESSO: 'FF2C1810',
+  CREAM:    'FFF5F0E8',
+  COPPER:   'FFB5621E',
+  LGRAY:    'FFF2F2F2',
+  TOTAL:    'FFEDE7DC',
+  WHITE:    'FFFFFFFF',
+  MUTED:    'FF8A7D70',
+  INK:      'FF1A1612',
+};
+
+function xlBorder(style='thin', color='FFBFBFBF') {
+  return { style, color: { argb: color } };
+}
+const THIN_ALL = {
+  top: xlBorder(), bottom: xlBorder(),
+  left: xlBorder(), right: xlBorder()
+};
+
+function styleCell(cell, opts={}) {
+  if (opts.bold || opts.italic || opts.size || opts.color || opts.font) {
+    cell.font = {
+      name: 'Arial',
+      size: opts.size || 10,
+      bold:   !!opts.bold,
+      italic: !!opts.italic,
+      color:  { argb: opts.color || CLR.INK }
+    };
+  }
+  if (opts.bg) {
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: opts.bg } };
+  }
+  if (opts.border) {
+    cell.border = opts.border === 'thin' ? THIN_ALL : opts.border;
+  }
+  if (opts.align || opts.valign || opts.wrap) {
+    cell.alignment = {
+      horizontal: opts.align  || 'left',
+      vertical:   opts.valign || 'middle',
+      wrapText:   !!opts.wrap
+    };
+  }
+  if (opts.numFmt) cell.numFmt = opts.numFmt;
+}
+
+// Set a plain text/label cell
+function setCell(ws, row, col, value, opts={}) {
+  const cell = ws.getCell(row, col);
+  cell.value = (value === undefined || value === null) ? null : value;
+  styleCell(cell, opts);
+  return cell;
+}
+
+// Table header cell: espresso bg, cream bold text, thin borders
+function hdrCell(ws, row, col, value, align='left') {
+  setCell(ws, row, col, value, {
+    bold: true, size: 9, color: CLR.CREAM,
+    bg: CLR.ESPRESSO, border: 'thin', align
+  });
+}
+
+// Data cell with thin border
+function dataCell(ws, row, col, value, bg=CLR.WHITE, align='left', numFmt=null) {
+  setCell(ws, row, col, value, {
+    size: 10, bg, border: 'thin', align,
+    ...(numFmt ? {numFmt} : {})
+  });
+}
+
+// Total row cell
+function totCell(ws, row, col, value, align='right', numFmt=null) {
+  setCell(ws, row, col, value, {
+    bold: true, size: 10, bg: CLR.TOTAL, border: 'thin', align,
+    ...(numFmt ? {numFmt} : {})
+  });
+}
+
+function downloadBuffer(buffer, filename) {
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ════════════════════════════════════════════════════
+//  EXPORT — PROFORMA INVOICE
+// ════════════════════════════════════════════════════
+function getPIRows() {
+  const rows = [];
+  document.getElementById('pi-items-body').querySelectorAll('tr').forEach(tr => {
+    const rid = tr.id;
+    rows.push({
+      description:    tr.querySelector('select')?.value || '',
+      unitValue:      parseFloat(document.getElementById(rid+'-uv')?.value)       || 0,
+      qty:            parseFloat(document.getElementById(rid+'-qty')?.value)      || 0,
+      subtotalValue:  parseFloat(document.getElementById(rid+'-sv')?.value)       || 0,
+      unitWeight:     parseFloat(document.getElementById(rid+'-uw')?.value)       || 0,
+      subtotalWeight: parseFloat(document.getElementById(rid+'-sw')?.value)       || 0,
+      hsCode:         document.getElementById(rid+'-hs')?.value                   || ''
+    });
+  });
+  return rows;
+}
+
+async function exportPI() {
+  const piNum        = document.getElementById('pi-number-display').textContent;
+  const date         = document.getElementById('pi-date').value;
+  const currency     = document.getElementById('pi-currency').value;
+  const reason       = document.getElementById('pi-reason').value;
+  const incoterm     = document.getElementById('pi-incoterm').value;
+  const cityLiab     = document.getElementById('pi-city-liability').value;
+  const accountType  = document.getElementById('pi-account-type').value;
+  const bank         = BANK_DATA[accountType];
+  const originStmt   = document.getElementById('pi-origin-statement').textContent;
+  const buyerCompany = document.getElementById('pi-buyer-company').value;
+  const buyerAddress = document.getElementById('pi-buyer-address').value;
+  const buyerCity    = document.getElementById('pi-buyer-city').value;
+  const buyerCountry = document.getElementById('pi-buyer-country').value;
+  const buyerEmail   = document.getElementById('pi-buyer-email').value;
+  const buyerPhone   = document.getElementById('pi-buyer-phone').value;
+  const buyerVat     = document.getElementById('pi-buyer-vat').value;
+  const delCompany   = document.getElementById('pi-del-company').value;
+  const delAddress   = document.getElementById('pi-del-address').value;
+  const delCity      = document.getElementById('pi-del-city').value;
+  const delCountry   = document.getElementById('pi-del-country').value;
+  const delEmail     = document.getElementById('pi-del-email').value;
+  const delPhone     = document.getElementById('pi-del-phone').value;
+  const rows         = getPIRows();
+  const totalQty     = rows.reduce((a,r)=>a+r.qty,0);
+  const totalSV      = rows.reduce((a,r)=>a+r.subtotalValue,0);
+  const totalSW      = rows.reduce((a,r)=>a+r.subtotalWeight,0);
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Kaffe Bueno ApS';
+  const ws = wb.addWorksheet('Proforma Invoice');
+
+  // Column widths
+  ws.columns = [
+    {width:3},{width:34},{width:14},{width:11},
+    {width:18},{width:16},{width:22},{width:18},{width:3}
+  ];
+
+  let r = 1;
+
+  // Logo / title row
+  ws.getRow(r).height = 36;
+  setCell(ws,r,2,'KAFFE BUENO ApS — Shipping Document',
+    {bold:true, size:14, color:CLR.ESPRESSO});
+  r++;
+
+  // Spacer rows
+  ws.getRow(r).height=6; r++;
+  ws.getRow(r).height=6; r++;
+  ws.getRow(r).height=6; r++;
+
+  // Party header labels
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Seller:',   {bold:true, size:10});
+  setCell(ws,r,5,'Buyer:',    {bold:true, size:10});
+  r++;
+
+  const sellerLines = [
+    ['Kaffe Bueno ApS',true],['Islevdalvej 211, tv',false],
+    ['2610 Rødovre',false],['Denmark',false],
+    ['Email: camilo@kaffebueno.com',false],
+    ['Phone: +45 71 46 00 21',false],['VAT: DK-37894036',false]
+  ];
+  const buyerLines = [
+    [buyerCompany,true],[buyerAddress,false],
+    [buyerCity+(buyerCountry?', '+buyerCountry:''),false],
+    [buyerEmail?'Email: '+buyerEmail:'',false],
+    [buyerPhone?'Phone: '+buyerPhone:'',false],
+    [buyerVat||'',false]
+  ];
+  const maxP = Math.max(sellerLines.length, buyerLines.length);
+  for (let i=0;i<maxP;i++) {
+    ws.getRow(r).height=14;
+    const sl=sellerLines[i]||['',false];
+    const bl=buyerLines[i]||['',false];
+    setCell(ws,r,2,sl[0],{bold:sl[1],size:10});
+    setCell(ws,r,5,bl[0],{bold:bl[1],size:10});
+    r++;
+  }
+  ws.getRow(r).height=6; r++;
+
+  // Date / invoice number
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Date:',{bold:true,size:10});
+  setCell(ws,r,3,date,{size:10});
+  setCell(ws,r,6,'Date:',{bold:true,size:10});
+  setCell(ws,r,7,date,{size:10});
+  r++;
+  ws.getRow(r).height=16;
+  setCell(ws,r,2,'Proforma Invoice No.:',{bold:true,size:10});
+  setCell(ws,r,3,piNum,{bold:true,size:12,color:CLR.COPPER});
+  r++;
+  ws.getRow(r).height=6; r++;
+
+  // Delivery address
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Delivery Address:',{bold:true,size:10}); r++;
+  const delLines=[delCompany,delAddress,
+    delCity+(delCountry?', '+delCountry:''),
+    delEmail?'Email: '+delEmail:'',
+    delPhone?'Phone: '+delPhone:''];
+  delLines.forEach((ln,i)=>{
+    if(!ln)return;
+    ws.getRow(r).height=14;
+    setCell(ws,r,2,ln,{bold:i===0,size:10}); r++;
+  });
+  ws.getRow(r).height=6; r++;
+
+  // Goods table header
+  ws.getRow(r).height=20;
+  hdrCell(ws,r,2,'Description of Goods','left');
+  hdrCell(ws,r,3,`Unit Value (${currency})`,'right');
+  hdrCell(ws,r,4,'Quantity','right');
+  hdrCell(ws,r,5,`Subtotal Value (${currency})`,'right');
+  hdrCell(ws,r,6,'Unit Weight (kg)','right');
+  hdrCell(ws,r,7,'Subtotal Weight (kg)','right');
+  hdrCell(ws,r,8,'Commodity Code','center');
+  r++;
+
+  // Data rows
+  rows.forEach((row,idx)=>{
+    const bg = idx%2===0 ? CLR.WHITE : CLR.LGRAY;
+    ws.getRow(r).height=16;
+    dataCell(ws,r,2,row.description,bg,'left');
+    dataCell(ws,r,3,row.unitValue,  bg,'right','0.0000');
+    dataCell(ws,r,4,row.qty,        bg,'right');
+    dataCell(ws,r,5,row.subtotalValue,bg,'right','0.00');
+    dataCell(ws,r,6,row.unitWeight, bg,'right','0.0000');
+    dataCell(ws,r,7,row.subtotalWeight,bg,'right','0.0000');
+    dataCell(ws,r,8,row.hsCode,     bg,'center');
+    r++;
+  });
+
+  // Totals row
+  ws.getRow(r).height=18;
+  totCell(ws,r,2,'TOTAL','left');
+  totCell(ws,r,3,'');
+  totCell(ws,r,4,totalQty,'right');
+  totCell(ws,r,5,totalSV,'right','0.00');
+  totCell(ws,r,6,'');
+  totCell(ws,r,7,totalSW,'right','0.0000');
+  totCell(ws,r,8,'');
+  r++;
+  ws.getRow(r).height=6; r++;
+
+  // Trade terms
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Reason for Export:',{bold:true,size:10});
+  setCell(ws,r,3,reason,{size:10});
+  setCell(ws,r,6,'Currency Code:',{bold:true,size:10});
+  setCell(ws,r,7,currency,{size:10});
+  r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Terms of Trade:',{bold:true,size:10});
+  setCell(ws,r,3,incoterm,{size:10});
+  setCell(ws,r,6,'City of Liability:',{bold:true,size:10});
+  setCell(ws,r,7,cityLiab,{size:10});
+  r++;
+  ws.getRow(r).height=6; r++;
+
+  // Banking
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Account Information:',{bold:true,size:10});
+  setCell(ws,r,6,'Bank Information:',{bold:true,size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,accountType+' Account',{size:10});
+  setCell(ws,r,6,'Danske Bank A/S',{size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Reg no.:',{bold:true,size:10});
+  setCell(ws,r,3,bank.reg,{size:10});
+  setCell(ws,r,6,'Bernstorffsgade 40',{size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Account no.:',{bold:true,size:10});
+  setCell(ws,r,3,bank.acc,{size:10});
+  setCell(ws,r,6,'1577 Copenhagen',{size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'IBAN:',{bold:true,size:10});
+  setCell(ws,r,3,bank.iban,{size:10});
+  setCell(ws,r,6,'Denmark',{size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'BIC/SWIFT:',{bold:true,size:10});
+  setCell(ws,r,3,'DABADKKK',{size:10}); r++;
+  ws.getRow(r).height=6; r++;
+
+  // Origin statement (merged across cols 2-8)
+  ws.getRow(r).height=28;
+  const oc = ws.getCell(r,2);
+  oc.value = originStmt;
+  styleCell(oc,{italic:true,size:9,color:CLR.MUTED,wrap:true,align:'left',valign:'middle'});
+  ws.mergeCells(r,2,r,8);
+  r++;
+  ws.getRow(r).height=6; r++;
+
+  // Signature
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Copenhagen, Denmark. '+date,{size:9,color:CLR.MUTED}); r++;
+  ws.getRow(r).height=32; r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'_'.repeat(48),{color:CLR.MUTED}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Camilo Fernandez, CFO signing on behalf of Kaffe Bueno ApS',
+    {italic:true,size:9,color:CLR.MUTED});
+
+  // Page setup
+  ws.pageSetup.paperSize = 9; // A4
+  ws.pageSetup.orientation = 'portrait';
+  ws.pageSetup.margins = {left:0.5,right:0.5,top:0.75,bottom:0.75,header:0.3,footer:0.3};
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const filename = `KB_ProformaInvoice_${piNum.replace('-','')}` +
+    `_${buyerCompany.replace(/\s+/g,'_').substring(0,20)}.xlsx`;
+  downloadBuffer(buffer, filename);
+
+  // Increment counter only after successful write
+  STATE.piCounter++;
+  localStorage.setItem('kb_pi_counter', STATE.piCounter);
+  const newNum = '26-0'+String(STATE.piCounter).padStart(3,'0');
+  document.getElementById('pi-number-display').textContent = newNum;
+  document.getElementById('pi-next-preview').textContent = '26-0'+String(STATE.piCounter+1).padStart(3,'0');
+  showToast('✓ Exported '+filename);
+}
+
+// ════════════════════════════════════════════════════
+//  EXPORT — PACKING LIST
+// ════════════════════════════════════════════════════
+async function exportPL() {
+  const plNum        = document.getElementById('pl-number-display').textContent;
+  const date         = document.getElementById('pl-date').value;
+  const customerNo   = document.getElementById('pl-customer-no').value;
+  const poNo         = document.getElementById('pl-po-no').value;
+  const incoterm     = document.getElementById('pl-incoterm').value;
+  const buyerCompany = document.getElementById('pl-buyer-company').value;
+  const buyerAddress = document.getElementById('pl-buyer-address').value;
+  const buyerCity    = document.getElementById('pl-buyer-city').value;
+  const buyerCountry = document.getElementById('pl-buyer-country').value;
+  const buyerEmail   = document.getElementById('pl-buyer-email').value;
+  const buyerPhone   = document.getElementById('pl-buyer-phone').value;
+  const buyerVat     = document.getElementById('pl-buyer-vat').value;
+  const delCompany   = document.getElementById('pl-del-company').value || buyerCompany;
+  const delAddress   = document.getElementById('pl-del-address').value || buyerAddress;
+  const delCity      = document.getElementById('pl-del-city').value    || buyerCity;
+  const delCountry   = document.getElementById('pl-del-country').value || buyerCountry;
+  const delEmail     = document.getElementById('pl-del-email').value   || buyerEmail;
+  const delPhone     = document.getElementById('pl-del-phone').value   || buyerPhone;
+
+  const plRows = [];
+  document.getElementById('pl-items-body').querySelectorAll('tr').forEach(tr => {
+    const rid=tr.id; const selects=tr.querySelectorAll('select');
+    plRows.push({
+      hsCode:      document.getElementById(rid+'-hs')?.value    || '',
+      productCode: document.getElementById(rid+'-code')?.value  || '',
+      description: selects[1]?.value                             || '',
+      origin:      'Denmark',
+      type:        document.getElementById(rid+'-type')?.value  || '',
+      dims:        document.getElementById(rid+'-dims')?.value  || '',
+      qty:         parseFloat(document.getElementById(rid+'-qty')?.value)  ||0,
+      net:         parseFloat(document.getElementById(rid+'-net')?.value)  ||0,
+      gross:       parseFloat(document.getElementById(rid+'-gross')?.value)||0
+    });
+  });
+  const totalQty   = plRows.reduce((a,r)=>a+r.qty,  0);
+  const totalNet   = plRows.reduce((a,r)=>a+r.net,  0);
+  const totalGross = plRows.reduce((a,r)=>a+r.gross,0);
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Kaffe Bueno ApS';
+  const ws = wb.addWorksheet('PL');
+
+  ws.columns = [
+    {width:3},{width:17},{width:11},{width:22},
+    {width:16},{width:10},{width:16},{width:10},{width:15},{width:16}
+  ];
+
+  let r = 1;
+
+  // Title
+  ws.getRow(r).height=36;
+  setCell(ws,r,2,'KAFFE BUENO ApS — Packing List',
+    {bold:true,size:14,color:CLR.ESPRESSO}); r++;
+  ws.getRow(r).height=6;r++;
+  ws.getRow(r).height=6;r++;
+  ws.getRow(r).height=6;r++;
+
+  // Party headers
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Seller:',          {bold:true,size:10});
+  setCell(ws,r,5,'Buyer:',           {bold:true,size:10});
+  setCell(ws,r,8,'Delivery Address:',{bold:true,size:10}); r++;
+
+  const sL=[['Kaffe Bueno ApS',true],['Islevdalvej 211, tv',false],
+    ['2610 Rødovre',false],['Denmark',false],
+    ['Email: camilo@kaffebueno.com',false],
+    ['Phone: +45 71 46 00 21',false],['VAT: DK-37894036',false]];
+  const bL=[[buyerCompany,true],[buyerAddress,false],
+    [buyerCity+(buyerCountry?', '+buyerCountry:''),false],
+    [buyerEmail?'Email: '+buyerEmail:'',false],
+    [buyerPhone?'Phone: '+buyerPhone:'',false],[buyerVat||'',false]];
+  const dL=[[delCompany,true],[delAddress,false],
+    [delCity+(delCountry?', '+delCountry:''),false],
+    [delEmail?'Email: '+delEmail:'',false],
+    [delPhone?'Phone: '+delPhone:'',false]];
+  const mx=Math.max(sL.length,bL.length,dL.length);
+  for(let i=0;i<mx;i++){
+    ws.getRow(r).height=14;
+    const sl=sL[i]||['',false]; const bl=bL[i]||['',false]; const dl=dL[i]||['',false];
+    setCell(ws,r,2,sl[0],{bold:sl[1],size:10});
+    setCell(ws,r,5,bl[0],{bold:bl[1],size:10});
+    setCell(ws,r,8,dl[0],{bold:dl[1],size:10}); r++;
+  }
+  ws.getRow(r).height=6; r++;
+
+  // Doc meta
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Customer No.:',   {bold:true,size:10});
+  setCell(ws,r,3,customerNo,        {size:10});
+  setCell(ws,r,7,'Packing List No.:',{bold:true,size:10});
+  setCell(ws,r,9,plNum,             {bold:true,size:11,color:CLR.ESPRESSO}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Delivery Terms:', {bold:true,size:10});
+  setCell(ws,r,3,incoterm,          {size:10});
+  setCell(ws,r,7,'Date:',           {bold:true,size:10});
+  setCell(ws,r,9,date,              {size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,7,'PO No.:',         {bold:true,size:10});
+  setCell(ws,r,9,poNo,              {size:10}); r++;
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Other:',          {size:10}); r++;
+  ws.getRow(r).height=13;
+  setCell(ws,r,2,'(Insert specific notes from client)',{italic:true,size:9,color:CLR.MUTED}); r++;
+  ws.getRow(r).height=13;
+  setCell(ws,r,2,'(If necessary - insert EORI No.:)', {italic:true,size:9,color:CLR.MUTED}); r++;
+  ws.getRow(r).height=6; r++;
+
+  // Table header
+  ws.getRow(r).height=20;
+  hdrCell(ws,r,2,'HS Code','left');
+  hdrCell(ws,r,3,'Product No','center');
+  hdrCell(ws,r,4,'Description','left');
+  hdrCell(ws,r,5,'Country of Origin','center');
+  hdrCell(ws,r,6,'Type','center');
+  hdrCell(ws,r,7,'Dimensions (cm)','center');
+  hdrCell(ws,r,8,'Quantity','right');
+  hdrCell(ws,r,9,'Net Weight (kg)','right');
+  hdrCell(ws,r,10,'Gross Weight (kg)','right'); r++;
+
+  // Data rows
+  plRows.forEach((row,idx)=>{
+    const bg=idx%2===0?CLR.WHITE:CLR.LGRAY;
+    ws.getRow(r).height=16;
+    dataCell(ws,r,2, row.hsCode,      bg,'left');
+    dataCell(ws,r,3, row.productCode, bg,'center');
+    dataCell(ws,r,4, row.description, bg,'left');
+    dataCell(ws,r,5, row.origin,      bg,'center');
+    dataCell(ws,r,6, row.type,        bg,'center');
+    dataCell(ws,r,7, row.dims,        bg,'center');
+    dataCell(ws,r,8, row.qty,         bg,'right');
+    dataCell(ws,r,9, row.net,         bg,'right','0.000');
+    dataCell(ws,r,10,row.gross,       bg,'right','0.000'); r++;
+  });
+
+  // Totals
+  ws.getRow(r).height=18;
+  for(let c=2;c<=10;c++) totCell(ws,r,c,'');
+  totCell(ws,r,7,'TOTAL','right');
+  totCell(ws,r,8,totalQty,'right');
+  totCell(ws,r,9,totalNet,'right','0.000');
+  totCell(ws,r,10,totalGross,'right','0.000'); r++;
+  ws.getRow(r).height=6; r++;
+
+  // Signature
+  ws.getRow(r).height=14;
+  setCell(ws,r,2,'Signature:',     {bold:true,size:10});
+  setCell(ws,r,3,'Kaffe Bueno ApS',{size:10});
+
+  ws.pageSetup.paperSize=9;
+  ws.pageSetup.orientation='portrait';
+  ws.pageSetup.margins={left:0.5,right:0.5,top:0.75,bottom:0.75,header:0.3,footer:0.3};
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const filename = `KB_PackingList_${plNum}_${buyerCompany.replace(/\s+/g,'_').substring(0,20)}.xlsx`;
+  downloadBuffer(buffer, filename);
+
+  // Increment counter only after successful write
+  const now=new Date();
+  const yy=String(now.getFullYear()).slice(-2);
+  const mm=String(now.getMonth()+1).padStart(2,'0');
+  const key=yy+mm;
+  STATE.plCounters[key]=(STATE.plCounters[key]||0)+1;
+  localStorage.setItem('kb_pl_counters',JSON.stringify(STATE.plCounters));
+  document.getElementById('pl-number-display').textContent=getPLNumber();
+  showToast('✓ Exported '+filename);
+}
+
+
+
+// ════════════════════════════════════════════════════
+//  MASTER DATA
+// ════════════════════════════════════════════════════
+let mdProductCount = 0;
+let mdPackageCount = 0;
+
+function mdRefreshCustomerDropdown() {
+  const sel = document.getElementById('md-customer-select');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select saved customer —</option>' +
+    STATE.customers.map((c,i) => `<option value="${i}">${c.company}</option>`).join('');
+  sel.value = cur;
+}
+
+function mdLoadCustomer() {
+  const idx = parseInt(document.getElementById('md-customer-select').value);
+  if (isNaN(idx)) return;
+  const c = STATE.customers[idx];
+  if (!c) return;
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  set('md-company', c.company);    set('md-vat', c.vat);
+  set('md-address', c.address);    set('md-city', c.city);
+  set('md-country', c.country);    set('md-email', c.email);
+  set('md-phone', c.phone);
+  set('md-del-company', c.delAddress ? c.company : '');
+  set('md-del-address', c.delAddress); set('md-del-city', c.delCity);
+  set('md-del-country', c.delCountry); set('md-del-email', c.delEmail);
+  set('md-del-phone', c.delPhone);
+}
+
+// ── Product Lines ────────────────────────────────────
+function mdAddProduct() {
+  mdProductCount++;
+  const pid = 'mdp-' + mdProductCount;
+  const tbody = document.getElementById('md-products-body');
+  const tr = document.createElement('tr');
+  tr.id = pid;
+  tr.style.borderBottom = '1px solid var(--border-light)';
+  tr.innerHTML = `
+    <td style="padding:6px 8px;">
+      <select id="${pid}-prod" onchange="mdOnProductChange('${pid}')" style="width:150px;">
+        ${PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </td>
+    <td style="padding:6px 8px;">
+      <select id="${pid}-hs" style="width:140px;font-family:DM Mono,monospace;font-size:11px;">
+        ${HS_CODES.map(h=>`<option value="${h}">${h}</option>`).join('')}
+      </select>
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" id="${pid}-qty" min="1" placeholder="0" style="width:75px;text-align:right;" oninput="mdCalcNet('${pid}')">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" id="${pid}-uw" min="0" step="0.0001" placeholder="kg" style="width:90px;text-align:right;" oninput="mdCalcNet('${pid}')" title="Weight per unit in kg (e.g. 0.03 = 30g)">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" id="${pid}-ppkg" min="0" step="0.01" placeholder="€/kg" style="width:80px;text-align:right;" oninput="mdCalcNet('${pid}')">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="text" id="${pid}-net" readonly class="calc-field" style="width:85px;text-align:right;font-family:DM Mono,monospace;font-size:11px;" placeholder="—">
+    </td>
+    <td style="padding:6px 8px;">
+      <button onclick="mdRemoveProduct('${pid}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;">×</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  mdOnProductChange(document.getElementById(pid+'-prod'));
+  mdRefreshPackageProductLists();
+}
+
+function mdOnProductChange(sel) {
+  const pid = sel.closest ? sel.closest('tr').id : sel.parentElement.parentElement.id;
+  const prod = document.getElementById(pid+'-prod').value;
+  const hs   = PRODUCT_HS[prod] || '2101.12.92.00';
+  const ppkg = PRODUCT_UNIT_VALUES[prod] || 35;
+  const hsEl = document.getElementById(pid+'-hs');
+  for(let i=0;i<hsEl.options.length;i++) if(hsEl.options[i].value===hs){hsEl.selectedIndex=i;break;}
+  document.getElementById(pid+'-ppkg').value = ppkg;
+  mdCalcNet(pid);
+  mdRefreshPackageProductLists();
+}
+
+function mdCalcNet(pid) {
+  const qty = parseFloat(document.getElementById(pid+'-qty')?.value) || 0;
+  const uw  = parseFloat(document.getElementById(pid+'-uw')?.value)  || 0;
+  const net = qty * uw;
+  document.getElementById(pid+'-net').value = net > 0 ? net.toFixed(4) : '';
+}
+
+function mdRemoveProduct(pid) {
+  document.getElementById(pid)?.remove();
+  mdRefreshPackageProductLists();
+}
+
+function mdGetProducts() {
+  const rows = [];
+  document.querySelectorAll('#md-products-body tr').forEach(tr => {
+    const pid = tr.id;
+    rows.push({
+      pid,
+      product:   document.getElementById(pid+'-prod')?.value || '',
+      hsCode:    document.getElementById(pid+'-hs')?.value   || '',
+      qty:       parseFloat(document.getElementById(pid+'-qty')?.value) || 0,
+      unitWeight:parseFloat(document.getElementById(pid+'-uw')?.value)  || 0,
+      pricePerKg:parseFloat(document.getElementById(pid+'-ppkg')?.value)|| 0,
+      netTotal:  parseFloat(document.getElementById(pid+'-net')?.value) || 0,
+    });
+  });
+  return rows;
+}
+
+// ── Packaging ────────────────────────────────────────
+function mdAddPackage() {
+  mdPackageCount++;
+  const pkid = 'mdpk-' + mdPackageCount;
+  const tbody = document.getElementById('md-packages-body');
+  const tr = document.createElement('tr');
+  tr.id = pkid;
+  tr.style.borderBottom = '1px solid var(--border-light)';
+  tr.innerHTML = `
+    <td style="padding:6px 8px;">
+      <select id="${pkid}-type" style="width:85px;">
+        <option>Pallet</option><option>Box</option><option>IBC</option>
+      </select>
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="text" id="${pkid}-dims" placeholder="120x80x76" style="width:115px;">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" id="${pkid}-qty" min="1" value="1" style="width:70px;text-align:right;">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" id="${pkid}-gross" min="0" step="0.001" placeholder="kg" style="width:85px;text-align:right;">
+    </td>
+    <td style="padding:6px 8px;" id="${pkid}-prods">
+      <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);">Add products above first</span>
+    </td>
+    <td style="padding:6px 8px;">
+      <button onclick="mdRemovePackage('${pkid}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;">×</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  mdRefreshPackageProductLists();
+}
+
+function mdRemovePackage(pkid) {
+  document.getElementById(pkid)?.remove();
+}
+
+function mdRefreshPackageProductLists() {
+  const products = mdGetProducts();
+  document.querySelectorAll('#md-packages-body tr').forEach(tr => {
+    const pkid = tr.id;
+    const cell = document.getElementById(pkid+'-prods');
+    if (!cell) return;
+    if (products.length === 0) {
+      cell.innerHTML = '<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);">Add products above first</span>';
+      return;
+    }
+    // Preserve existing checked state
+    const existing = {};
+    cell.querySelectorAll('input[type=checkbox]').forEach(cb => { existing[cb.value] = cb.checked; });
+    cell.innerHTML = products.map(p => {
+      const checked = existing[p.pid] !== undefined ? existing[p.pid] : true;
+      return `<label style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:11px;cursor:pointer;">
+        <input type="checkbox" value="${p.pid}" ${checked?'checked':''} style="cursor:pointer;">
+        ${p.product}
+      </label>`;
+    }).join('');
+  });
+}
+
+function mdGetPackages() {
+  const rows = [];
+  document.querySelectorAll('#md-packages-body tr').forEach(tr => {
+    const pkid = tr.id;
+    const selectedPids = [];
+    tr.querySelectorAll('input[type=checkbox]:checked').forEach(cb => selectedPids.push(cb.value));
+    rows.push({
+      type:      document.getElementById(pkid+'-type')?.value   || 'Pallet',
+      dims:      document.getElementById(pkid+'-dims')?.value   || '',
+      qty:       parseFloat(document.getElementById(pkid+'-qty')?.value)   || 1,
+      grossEach: parseFloat(document.getElementById(pkid+'-gross')?.value) || 0,
+      productPids: selectedPids,
+    });
+  });
+  return rows;
+}
+
+// ── Apply to Both Documents ──────────────────────────
+function mdApply() {
+  const g = id => document.getElementById(id)?.value || '';
+
+  // Customer → PI + PL
+  const fields = [
+    ['md-company','pi-buyer-company','pl-buyer-company'],
+    ['md-vat','pi-buyer-vat','pl-buyer-vat'],
+    ['md-address','pi-buyer-address','pl-buyer-address'],
+    ['md-city','pi-buyer-city','pl-buyer-city'],
+    ['md-country','pi-buyer-country','pl-buyer-country'],
+    ['md-email','pi-buyer-email','pl-buyer-email'],
+    ['md-phone','pi-buyer-phone','pl-buyer-phone'],
+    ['md-del-company','pi-del-company','pl-del-company'],
+    ['md-del-address','pi-del-address','pl-del-address'],
+    ['md-del-city','pi-del-city','pl-del-city'],
+    ['md-del-country','pi-del-country','pl-del-country'],
+    ['md-del-email','pi-del-email','pl-del-email'],
+    ['md-del-phone','pi-del-phone','pl-del-phone'],
+  ];
+  fields.forEach(([src, pi, pl]) => {
+    const v = g(src);
+    const piEl=document.getElementById(pi); if(piEl) piEl.value=v;
+    const plEl=document.getElementById(pl); if(plEl) plEl.value=v;
+  });
+
+  // Shipment terms → PI
+  const piInc=document.getElementById('pi-incoterm');   if(piInc) piInc.value=g('md-incoterm');
+  const piCur=document.getElementById('pi-currency');   if(piCur) piCur.value=g('md-currency');
+  const piRea=document.getElementById('pi-reason');     if(piRea) piRea.value=g('md-reason');
+  const piAcc=document.getElementById('pi-account-type'); if(piAcc) piAcc.value=g('md-account');
+  updateCityOfLiability(); updateOriginStatement(); updateBankInfo();
+
+  // Shipment terms → PL
+  const plInc=document.getElementById('pl-incoterm');    if(plInc) plInc.value=g('md-incoterm');
+  const plCN=document.getElementById('pl-customer-no'); if(plCN) plCN.value=g('md-customer-no');
+  const plPO=document.getElementById('pl-po-no');       if(plPO) plPO.value=g('md-po-no');
+
+  const products = mdGetProducts();
+  const packages = mdGetPackages();
+
+  // ── Push to Proforma Invoice ─────────────────────
+  // Clear existing PI rows and rebuild from master data products
+  if (products.length > 0) {
+    document.getElementById('pi-items-body').innerHTML = '';
+    piRowCount = 0;
+    products.forEach(p => {
+      piRowCount++;
+      const rid = 'pi-row-' + piRowCount;
+      const tbody = document.getElementById('pi-items-body');
+      const tr = document.createElement('tr');
+      tr.id = rid;
+      const uv = p.pricePerKg * p.unitWeight;
+      const sv = uv * p.qty;
+      const sw = p.qty * p.unitWeight;
+      tr.innerHTML = `
+        <td>
+          <select onchange="onPIProductChange(this, '${rid}')" style="width:100%;">
+            ${PRODUCTS.map(pr=>`<option value="${pr}" ${pr===p.product?'selected':''}>${pr}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="hidden" id="${rid}-pkgprice" value="${p.pricePerKg}">
+          <input type="number" id="${rid}-uv" value="${uv.toFixed(4)}" step="0.0001" oninput="recalcPISV('${rid}')" style="width:80px;border:1px solid var(--border);background:white;padding:6px 8px;font-family:DM Mono,monospace;font-size:11px;">
+        </td>
+        <td><input type="number" id="${rid}-qty" min="1" value="${p.qty}" oninput="calcPIRow('${rid}')" style="width:70px;"></td>
+        <td><input type="text" class="calc-field" id="${rid}-sv" value="${sv.toFixed(2)}" readonly style="width:90px;font-family:DM Mono,monospace;font-size:11px;"></td>
+        <td><input type="number" id="${rid}-uw" min="0" step="0.0001" value="${p.unitWeight}" oninput="calcPIRow('${rid}')" style="width:80px;"></td>
+        <td><input type="text" class="calc-field" id="${rid}-sw" value="${sw.toFixed(4)}" readonly style="width:100px;font-family:DM Mono,monospace;font-size:11px;"></td>
+        <td>
+          <select id="${rid}-hs" style="width:100%;font-family:DM Mono,monospace;font-size:11px;">
+            ${HS_CODES.map(h=>`<option value="${h}" ${h===p.hsCode?'selected':''}>${h}</option>`).join('')}
+          </select>
+        </td>
+        <td><button class="del-row-btn" onclick="delPIRow('${rid}')">×</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    updatePITotals();
+  }
+
+  // ── Push to Packing List ─────────────────────────
+  // Rebuild groups from packages + their assigned products
+  if (packages.length > 0) {
+    document.getElementById('pl-groups-body').innerHTML = '';
+    plGroupCount = 0; plItemCount = 0;
+
+    packages.forEach(pkg => {
+      plGroupCount++;
+      const gid = 'plg-' + plGroupCount;
+      const container = document.getElementById('pl-groups-body');
+      const div = document.createElement('div');
+      div.id = gid;
+      div.className = 'pl-group';
+      div.style.cssText = 'border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;';
+      div.innerHTML = `
+        <div style="background:var(--espresso);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--cream);letter-spacing:0.08em;text-transform:uppercase;">Package ${plGroupCount}</span>
+            <select id="${gid}-type" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;border:none;border-radius:2px;background:#f5f0e8;color:var(--espresso);">
+              <option ${pkg.type==='Pallet'?'selected':''}>Pallet</option>
+              <option ${pkg.type==='Box'?'selected':''}>Box</option>
+              <option ${pkg.type==='IBC'?'selected':''}>IBC</option>
+            </select>
+            <input type="text" id="${gid}-dims" value="${pkg.dims}" placeholder="120x80x76 cm" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;border:none;border-radius:2px;width:120px;">
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:#a89880;">QTY of packages:</span>
+            <input type="number" id="${gid}-pkg-qty" min="1" value="${pkg.qty}" oninput="updatePLTotals()" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 6px;border:none;border-radius:2px;width:50px;">
+            <span style="font-family:DM Mono,monospace;font-size:9px;color:#a89880;">Gross kg/pkg:</span>
+            <input type="number" id="${gid}-gross-each" min="0" step="0.001" value="${pkg.grossEach||''}" placeholder="0" oninput="updatePLTotals()" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 6px;border:none;border-radius:2px;width:70px;">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="addPLItem('${gid}')" style="background:var(--copper);border:none;color:white;font-family:DM Mono,monospace;font-size:9px;padding:4px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">+ Product</button>
+            <button onclick="removePLGroup('${gid}')" style="background:none;border:1px solid #666;color:#ccc;font-family:DM Mono,monospace;font-size:11px;padding:2px 8px;border-radius:2px;cursor:pointer;">×</button>
+          </div>
+        </div>
+        <div id="${gid}-items" style="padding:0;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f0ece6;">
+                <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:155px;">HS Code</th>
+                <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:105px;">Product Code</th>
+                <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;">Description</th>
+                <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:115px;">Country</th>
+                <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:80px;">Net kg</th>
+                <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:30px;"></th>
+              </tr>
+            </thead>
+            <tbody id="${gid}-tbody"></tbody>
+          </table>
+        </div>
+      `;
+      container.appendChild(div);
+
+      // Add the products assigned to this package
+      const assignedProducts = products.filter(p => pkg.productPids.includes(p.pid));
+      assignedProducts.forEach(p => {
+        plItemCount++;
+        const iid = gid + '-item-' + plItemCount;
+        const tbody = document.getElementById(gid + '-tbody');
+        const tr = document.createElement('tr');
+        tr.id = iid;
+        tr.style.borderBottom = '1px solid var(--border-light)';
+        tr.innerHTML = `
+          <td style="padding:5px 8px;">
+            <select id="${iid}-hs" style="width:140px;font-family:DM Mono,monospace;font-size:11px;">
+              ${HS_CODES.map(h=>`<option value="${h}" ${h===p.hsCode?'selected':''}>${h}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:5px 8px;">
+            <input type="text" id="${iid}-code" class="calc-field" value="${PRODUCT_CODES[p.product]||''}" readonly style="width:90px;font-family:DM Mono,monospace;font-size:11px;">
+          </td>
+          <td style="padding:5px 8px;">
+            <select id="${iid}-desc" onchange="onPLItemChange(this,'${iid}')" style="width:100%;">
+              ${PRODUCTS.map(pr=>`<option value="${pr}" ${pr===p.product?'selected':''}>${pr}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:5px 8px;">
+            <input type="text" class="calc-field" value="Denmark" readonly style="width:90px;font-size:11px;">
+          </td>
+          <td style="padding:5px 8px;">
+            <input type="number" id="${iid}-net" min="0" step="0.001" value="${p.netTotal.toFixed(4)}" oninput="updatePLTotals()" style="width:75px;text-align:right;">
+          </td>
+          <td style="padding:5px 8px;">
+            <button onclick="removePLItem('${iid}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:2px;">×</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+    updatePLTotals();
+  }
+
+  showToast('✓ Master data applied to both documents');
+}
+
+function mdClear() {
+  if (!confirm('Clear all master data?')) return;
+  ['md-company','md-vat','md-address','md-city','md-country','md-email','md-phone',
+   'md-del-company','md-del-address','md-del-city','md-del-country','md-del-email','md-del-phone',
+   'md-customer-no','md-po-no'].forEach(id => {
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('md-customer-select').value='';
+  document.getElementById('md-products-body').innerHTML='';
+  document.getElementById('md-packages-body').innerHTML='';
+  mdProductCount=0; mdPackageCount=0;
+  showToast('Master data cleared.');
+}
+
+// ════════════════════════════════════════════════════
+//  PACKING LIST — GROUPED PACKAGING
+// ════════════════════════════════════════════════════
+let plGroupCount = 0;
+
+function addPLGroup() {
+  plGroupCount++;
+  const gid = 'plg-' + plGroupCount;
+  const container = document.getElementById('pl-groups-body');
+  const div = document.createElement('div');
+  div.id = gid;
+  div.className = 'pl-group';
+  div.style.cssText = 'border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;';
+  div.innerHTML = `
+    <div style="background:var(--espresso);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--cream);letter-spacing:0.08em;text-transform:uppercase;">Package ${plGroupCount}</span>
+        <select id="${gid}-type" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;border:none;border-radius:2px;background:#f5f0e8;color:var(--espresso);">
+          <option>Pallet</option><option>Box</option><option>IBC</option>
+        </select>
+        <input type="text" id="${gid}-dims" placeholder="120x80x76 cm" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;border:none;border-radius:2px;width:120px;">
+        <span style="font-family:DM Mono,monospace;font-size:9px;color:#a89880;">QTY of packages:</span>
+        <input type="number" id="${gid}-pkg-qty" min="1" value="1" oninput="updatePLTotals()" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 6px;border:none;border-radius:2px;width:50px;">
+        <span style="font-family:DM Mono,monospace;font-size:9px;color:#a89880;">Gross kg/pkg:</span>
+        <input type="number" id="${gid}-gross-each" min="0" step="0.001" placeholder="0" oninput="updatePLTotals()" style="font-family:DM Mono,monospace;font-size:10px;padding:3px 6px;border:none;border-radius:2px;width:70px;">
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="addPLItem('${gid}')" style="background:var(--copper);border:none;color:white;font-family:DM Mono,monospace;font-size:9px;padding:4px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">+ Product</button>
+        <button onclick="removePLGroup('${gid}')" style="background:none;border:1px solid #666;color:#ccc;font-family:DM Mono,monospace;font-size:11px;padding:2px 8px;border-radius:2px;cursor:pointer;">×</button>
+      </div>
+    </div>
+    <div id="${gid}-items" style="padding:0;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f0ece6;">
+            <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:155px;">HS Code</th>
+            <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:105px;">Product Code</th>
+            <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;">Description</th>
+            <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:115px;">Country</th>
+            <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:80px;">Net kg</th>
+            <th style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.06em;text-transform:uppercase;width:30px;"></th>
+          </tr>
+        </thead>
+        <tbody id="${gid}-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  container.appendChild(div);
+  addPLItem(gid);
+  updatePLTotals();
+}
+
+let plItemCount = 0;
+function addPLItem(gid) {
+  plItemCount++;
+  const iid = gid + '-item-' + plItemCount;
+  const tbody = document.getElementById(gid + '-tbody');
+  const tr = document.createElement('tr');
+  tr.id = iid;
+  tr.style.borderBottom = '1px solid var(--border-light)';
+  tr.innerHTML = `
+    <td style="padding:5px 8px;">
+      <select id="${iid}-hs" style="width:140px;font-family:DM Mono,monospace;font-size:11px;">
+        ${HS_CODES.map(h=>`<option value="${h}">${h}</option>`).join('')}
+      </select>
+    </td>
+    <td style="padding:5px 8px;">
+      <input type="text" id="${iid}-code" class="calc-field" value="010201" readonly style="width:90px;font-family:DM Mono,monospace;font-size:11px;">
+    </td>
+    <td style="padding:5px 8px;">
+      <select id="${iid}-desc" onchange="onPLItemChange(this,'${iid}')" style="width:100%;">
+        ${PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </td>
+    <td style="padding:5px 8px;">
+      <input type="text" class="calc-field" value="Denmark" readonly style="width:90px;font-size:11px;">
+    </td>
+    <td style="padding:5px 8px;">
+      <input type="number" id="${iid}-net" min="0" step="0.001" placeholder="0" oninput="updatePLTotals()" style="width:75px;text-align:right;">
+    </td>
+    <td style="padding:5px 8px;">
+      <button onclick="removePLItem('${iid}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:2px;">×</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  onPLItemChange(tr.querySelector('select[id$="-desc"]'), iid);
+  updatePLTotals();
+}
+
+function onPLItemChange(sel, iid) {
+  const prod = sel.value;
+  document.getElementById(iid+'-code').value = PRODUCT_CODES[prod]||'';
+  const hsCode = PRODUCT_HS[prod]||'2101.12.92.00';
+  const hsS = document.getElementById(iid+'-hs');
+  for(let i=0;i<hsS.options.length;i++) if(hsS.options[i].value===hsCode){hsS.selectedIndex=i;break;}
+}
+
+function removePLItem(iid) {
+  const el = document.getElementById(iid);
+  if(el) { el.remove(); updatePLTotals(); }
+}
+
+function removePLGroup(gid) {
+  const el = document.getElementById(gid);
+  if(el) { el.remove(); updatePLTotals(); }
+}
+
+function updatePLTotals() {
+  let totalQty=0, totalNet=0, totalGross=0;
+  document.querySelectorAll('.pl-group').forEach(grp => {
+    const gid = grp.id;
+    const pkgQty   = parseFloat(document.getElementById(gid+'-pkg-qty')?.value)||0;
+    const grossEach= parseFloat(document.getElementById(gid+'-gross-each')?.value)||0;
+    totalQty   += pkgQty;
+    totalGross += pkgQty * grossEach;
+    grp.querySelectorAll('tr[id*="-item-"]').forEach(tr => {
+      totalNet += parseFloat(document.getElementById(tr.id+'-net')?.value)||0;
+    });
+  });
+  document.getElementById('pl-total-qty').textContent   = totalQty   || '—';
+  document.getElementById('pl-total-net').textContent   = totalNet   ? totalNet.toFixed(3)   : '—';
+  document.getElementById('pl-total-gross').textContent = totalGross ? totalGross.toFixed(3) : '—';
+}
+
+function getPLExportRows() {
+  const exportRows = [];
+  document.querySelectorAll('.pl-group').forEach(grp => {
+    const gid      = grp.id;
+    const pkgType  = document.getElementById(gid+'-type')?.value  || '';
+    const dims     = document.getElementById(gid+'-dims')?.value  || '';
+    const pkgQty   = parseFloat(document.getElementById(gid+'-pkg-qty')?.value)||0;
+    const grossEach= parseFloat(document.getElementById(gid+'-gross-each')?.value)||0;
+    const items    = [];
+    grp.querySelectorAll('tr[id*="-item-"]').forEach(tr => {
+      const iid = tr.id;
+      items.push({
+        hsCode:      document.getElementById(iid+'-hs')?.value   ||'',
+        productCode: document.getElementById(iid+'-code')?.value ||'',
+        description: document.getElementById(iid+'-desc')?.value ||'',
+        net:         parseFloat(document.getElementById(iid+'-net')?.value)||0,
+      });
+    });
+    exportRows.push({
+      pkgType, dims, pkgQty, grossEach,
+      grossTotal: pkgQty * grossEach,
+      items
+    });
+  });
+  return exportRows;
+}
+
+// ════════════════════════════════════════════════════
+//  PDF EXPORT — print-to-PDF via hidden iframe
+// ════════════════════════════════════════════════════
+function exportPDF(docType) {
+  const doc = docType === 'pi' ? buildPIDoc() : buildPLDoc();
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(doc);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 600);
+}
+
+function pdfStyles() {
+  return `
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+      * { box-sizing:border-box; margin:0; padding:0; }
+      body { font-family:'DM Sans',Arial,sans-serif; font-size:9pt; color:#1a1612; background:white; padding:20mm 18mm; }
+      @media print {
+        body { padding:12mm 14mm; }
+        @page { size:A4 portrait; margin:10mm 12mm; }
+        .no-print { display:none !important; }
+      }
+      h1 { font-family:'DM Sans',sans-serif; font-size:14pt; font-weight:700; color:#2c1810; margin-bottom:2mm; }
+      .doc-ref { font-family:DM Mono,monospace; font-size:11pt; font-weight:600; color:#b5621e; }
+      .parties { display:grid; grid-template-columns:1fr 1fr; gap:12mm; margin:6mm 0; }
+      .parties-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8mm; margin:6mm 0; }
+      .party-block h4 { font-family:DM Mono,monospace; font-size:7pt; text-transform:uppercase; letter-spacing:0.08em; color:#8a7d70; border-bottom:1px solid #d4c8b8; padding-bottom:2mm; margin-bottom:2mm; }
+      .party-block p { font-size:8.5pt; line-height:1.55; color:#1a1612; }
+      .party-block p.bold { font-weight:600; }
+      .meta-box { display:grid; grid-template-columns:1fr 1fr; gap:3mm; margin:4mm 0 6mm; }
+      .meta-box .row { display:flex; gap:4mm; }
+      .meta-box .lbl { font-family:DM Mono,monospace; font-size:7.5pt; color:#8a7d70; min-width:90pt; }
+      .meta-box .val { font-size:8.5pt; font-weight:500; }
+      table.goods { width:100%; border-collapse:collapse; margin:4mm 0; font-size:8pt; }
+      table.goods th { background:#2c1810; color:#f5f0e8; font-family:DM Mono,monospace; font-size:7pt; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:5pt 7pt; text-align:left; border:1px solid #2c1810; }
+      table.goods th.r { text-align:right; }
+      table.goods td { padding:4pt 7pt; border:1px solid #d4c8b8; vertical-align:middle; }
+      table.goods td.r { text-align:right; font-family:DM Mono,monospace; }
+      table.goods td.c { text-align:center; }
+      table.goods tr.alt td { background:#f2f2f2; }
+      table.goods tr.total td { background:#ede7dc; font-weight:700; font-family:DM Mono,monospace; font-size:8pt; }
+      table.goods tr.group-hdr td { background:#f5f0e8; font-weight:600; font-family:DM Mono,monospace; font-size:7.5pt; }
+      table.goods tr.sub-item td { padding-left:14pt; font-size:7.5pt; color:#5a5050; }
+      .section { margin:5mm 0 2mm; }
+      .section-label { font-family:DM Mono,monospace; font-size:7.5pt; text-transform:uppercase; letter-spacing:0.08em; color:#8a7d70; border-bottom:1px solid #e8e0d4; padding-bottom:1.5mm; margin-bottom:3mm; }
+      .two-col { display:grid; grid-template-columns:1fr 1fr; gap:8mm; margin:3mm 0; }
+      .bank-box { font-size:8pt; line-height:1.7; }
+      .bank-box .lbl { font-weight:600; }
+      .origin-stmt { font-size:7.5pt; font-style:italic; color:#8a7d70; margin:4mm 0; line-height:1.6; border-left:2px solid #b5621e; padding-left:4mm; }
+      .sig-area { margin-top:8mm; }
+      .sig-line { border-bottom:1px solid #1a1612; width:70mm; margin:8mm 0 1mm; }
+      .sig-name { font-size:8pt; color:#8a7d70; font-style:italic; }
+      .no-print { margin-bottom:6mm; }
+      .btn-print { background:#2c1810; color:#f5f0e8; border:none; padding:8px 20px; font-family:DM Mono,monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; cursor:pointer; border-radius:2px; margin-right:8px; }
+      .btn-close { background:none; border:1px solid #d4c8b8; padding:8px 20px; font-family:DM Mono,monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; cursor:pointer; border-radius:2px; color:#8a7d70; }
+    </style>
+  `;
+}
+
+function buildPIDoc() {
+  const piNum        = document.getElementById('pi-number-display').textContent;
+  const date         = document.getElementById('pi-date').value;
+  const currency     = document.getElementById('pi-currency').value;
+  const reason       = document.getElementById('pi-reason').value;
+  const incoterm     = document.getElementById('pi-incoterm').value;
+  const cityLiab     = document.getElementById('pi-city-liability').value;
+  const accountType  = document.getElementById('pi-account-type').value;
+  const bank         = BANK_DATA[accountType];
+  const originStmt   = document.getElementById('pi-origin-statement').textContent;
+  const buyerCompany = document.getElementById('pi-buyer-company').value;
+  const buyerAddress = document.getElementById('pi-buyer-address').value;
+  const buyerCity    = document.getElementById('pi-buyer-city').value;
+  const buyerCountry = document.getElementById('pi-buyer-country').value;
+  const buyerEmail   = document.getElementById('pi-buyer-email').value;
+  const buyerPhone   = document.getElementById('pi-buyer-phone').value;
+  const buyerVat     = document.getElementById('pi-buyer-vat').value;
+  const delCompany   = document.getElementById('pi-del-company').value;
+  const delAddress   = document.getElementById('pi-del-address').value;
+  const delCity      = document.getElementById('pi-del-city').value;
+  const delCountry   = document.getElementById('pi-del-country').value;
+  const delEmail     = document.getElementById('pi-del-email').value;
+  const delPhone     = document.getElementById('pi-del-phone').value;
+  const rows         = getPIRows();
+  const totalQty     = rows.reduce((a,r)=>a+r.qty,0);
+  const totalSV      = rows.reduce((a,r)=>a+r.subtotalValue,0).toFixed(2);
+  const totalSW      = rows.reduce((a,r)=>a+r.subtotalWeight,0).toFixed(4);
+
+  const rowsHTML = rows.map((row,i) => `
+    <tr class="${i%2===1?'alt':''}">
+      <td>${row.description}</td>
+      <td class="r">${row.unitValue.toFixed(4)}</td>
+      <td class="r">${row.qty}</td>
+      <td class="r">${row.subtotalValue.toFixed(2)}</td>
+      <td class="r">${row.unitWeight.toFixed(4)}</td>
+      <td class="r">${row.subtotalWeight.toFixed(4)}</td>
+      <td class="c">${row.hsCode}</td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Proforma Invoice ${piNum}</title>
+  ${pdfStyles()}</head><body>
+  <div class="no-print">
+    <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+    <button class="btn-close" onclick="window.close()">Close</button>
+  </div>
+  <h1>KAFFE <span style="color:#b5621e;">●</span> BUENO</h1>
+  <div style="margin:3mm 0 5mm;border-bottom:2px solid #2c1810;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5mm;">
+    <div style="font-family:DM Mono,monospace;font-size:9pt;color:#8a7d70;letter-spacing:0.08em;text-transform:uppercase;">Proforma Invoice</div>
+    <div style="text-align:right;">
+      <div class="doc-ref">${piNum}</div>
+      <div style="font-size:8pt;color:#8a7d70;margin-top:1mm;">${date}</div>
+    </div>
+  </div>
+  <div class="parties">
+    <div class="party-block"><h4>Seller</h4>
+      <p class="bold">Kaffe Bueno ApS</p>
+      <p>Islevdalvej 211, tv<br>2610 Rødovre, Denmark<br>Email: camilo@kaffebueno.com<br>Phone: +45 71 46 00 21<br>VAT: DK-37894036</p>
+    </div>
+    <div class="party-block"><h4>Buyer</h4>
+      <p class="bold">${buyerCompany||'—'}</p>
+      <p>${[buyerAddress,buyerCity+(buyerCountry?', '+buyerCountry:''),buyerEmail?'Email: '+buyerEmail:'',buyerPhone?'Phone: '+buyerPhone:'',buyerVat].filter(Boolean).join('<br>')}</p>
+    </div>
+  </div>
+  ${delCompany||delAddress ? `<div class="party-block" style="margin:4mm 0;"><h4>Delivery Address</h4>
+    <p class="bold">${delCompany}</p>
+    <p>${[delAddress,delCity+(delCountry?', '+delCountry:''),delEmail?'Email: '+delEmail:'',delPhone?'Phone: '+delPhone:''].filter(Boolean).join('<br>')}</p>
+  </div>` : ''}
+  <table class="goods">
+    <thead><tr>
+      <th>Description of Goods</th>
+      <th class="r">Unit Value (${currency})</th>
+      <th class="r">Qty</th>
+      <th class="r">Subtotal (${currency})</th>
+      <th class="r">Unit Wt (kg)</th>
+      <th class="r">Sub Wt (kg)</th>
+      <th class="c">HS Code</th>
+    </tr></thead>
+    <tbody>${rowsHTML}</tbody>
+    <tfoot><tr class="total">
+      <td><strong>TOTAL</strong></td><td></td>
+      <td class="r">${totalQty}</td>
+      <td class="r">${totalSV}</td>
+      <td></td>
+      <td class="r">${totalSW}</td>
+      <td></td>
+    </tr></tfoot>
+  </table>
+  <div class="two-col" style="margin-top:5mm;">
+    <div>
+      <div class="section-label">Export Details</div>
+      <div class="bank-box">
+        <div><span class="lbl">Reason for Export:</span> ${reason}</div>
+        <div><span class="lbl">Terms of Trade:</span> ${incoterm}</div>
+        <div><span class="lbl">Currency:</span> ${currency}</div>
+        <div><span class="lbl">City of Liability:</span> ${cityLiab}</div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Account &amp; Banking</div>
+      <div class="bank-box">
+        <div><span class="lbl">${accountType} Account</span></div>
+        <div>Reg no.: ${bank.reg} · Acc: ${bank.acc}</div>
+        <div>IBAN: ${bank.iban}</div>
+        <div>BIC/SWIFT: DABADKKK</div>
+        <div style="margin-top:2mm;">Danske Bank A/S, Bernstorffsgade 40<br>1577 Copenhagen, Denmark</div>
+      </div>
+    </div>
+  </div>
+  <div class="origin-stmt">${originStmt}</div>
+  <div class="sig-area">
+    <div style="font-size:8pt;color:#8a7d70;">Copenhagen, Denmark. ${date}</div>
+    <div class="sig-line"></div>
+    <div class="sig-name">Camilo Fernandez, CFO — Kaffe Bueno ApS</div>
+  </div>
+  </body></html>`;
+}
+
+function buildPLDoc() {
+  const plNum      = document.getElementById('pl-number-display').textContent;
+  const date       = document.getElementById('pl-date').value;
+  const customerNo = document.getElementById('pl-customer-no').value;
+  const poNo       = document.getElementById('pl-po-no').value;
+  const incoterm   = document.getElementById('pl-incoterm').value;
+  const buyerCompany = document.getElementById('pl-buyer-company').value;
+  const buyerAddress = document.getElementById('pl-buyer-address').value;
+  const buyerCity    = document.getElementById('pl-buyer-city').value;
+  const buyerCountry = document.getElementById('pl-buyer-country').value;
+  const buyerEmail   = document.getElementById('pl-buyer-email').value;
+  const buyerPhone   = document.getElementById('pl-buyer-phone').value;
+  const buyerVat     = document.getElementById('pl-buyer-vat').value;
+  const delCompany   = document.getElementById('pl-del-company').value||buyerCompany;
+  const delAddress   = document.getElementById('pl-del-address').value||buyerAddress;
+  const delCity      = document.getElementById('pl-del-city').value||buyerCity;
+  const delCountry   = document.getElementById('pl-del-country').value||buyerCountry;
+  const delEmail     = document.getElementById('pl-del-email').value||buyerEmail;
+  const delPhone     = document.getElementById('pl-del-phone').value||buyerPhone;
+  const groups       = getPLExportRows();
+
+  let rowsHTML = '';
+  let altIdx = 0;
+  let totalQty=0, totalNet=0, totalGross=0;
+
+  groups.forEach(g => {
+    const gross = g.grossTotal;
+    const net   = g.items.reduce((a,it)=>a+it.net,0);
+    totalQty   += g.pkgQty;
+    totalNet   += net;
+    totalGross += gross;
+    // Package header row
+    rowsHTML += `<tr class="group-hdr">
+      <td colspan="2">${g.pkgType.toUpperCase()} — ${g.dims} — ${g.pkgQty} unit(s)</td>
+      <td class="c">Denmark</td>
+      <td class="c">${g.pkgType}</td>
+      <td class="c">${g.dims}</td>
+      <td class="r">${g.pkgQty}</td>
+      <td class="r">${net.toFixed(3)}</td>
+      <td class="r">${gross.toFixed(3)}</td>
+    </tr>`;
+    // Sub-items
+    g.items.forEach(item => {
+      rowsHTML += `<tr class="sub-item">
+        <td>${item.hsCode}</td>
+        <td class="c">${item.productCode}</td>
+        <td>↳ ${item.description}</td>
+        <td class="c">Denmark</td>
+        <td></td>
+        <td></td>
+        <td class="r">${item.net.toFixed(3)}</td>
+        <td></td>
+      </tr>`;
+    });
+  });
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Packing List ${plNum}</title>
+  ${pdfStyles()}</head><body>
+  <div class="no-print">
+    <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+    <button class="btn-close" onclick="window.close()">Close</button>
+  </div>
+  <h1>KAFFE <span style="color:#b5621e;">●</span> BUENO</h1>
+  <div style="margin:3mm 0 5mm;border-bottom:2px solid #2c1810;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5mm;">
+    <div style="font-family:DM Mono,monospace;font-size:9pt;color:#8a7d70;letter-spacing:0.08em;text-transform:uppercase;">Packing List</div>
+    <div style="text-align:right;">
+      <div class="doc-ref">${plNum}</div>
+      <div style="font-size:8pt;color:#8a7d70;margin-top:1mm;">${date}</div>
+    </div>
+  </div>
+  <div class="parties-3">
+    <div class="party-block"><h4>Seller</h4>
+      <p class="bold">Kaffe Bueno ApS</p>
+      <p>Islevdalvej 211, tv<br>2610 Rødovre, Denmark<br>Email: camilo@kaffebueno.com<br>Phone: +45 71 46 00 21<br>VAT: DK-37894036</p>
+    </div>
+    <div class="party-block"><h4>Buyer</h4>
+      <p class="bold">${buyerCompany||'—'}</p>
+      <p>${[buyerAddress,buyerCity+(buyerCountry?', '+buyerCountry:''),buyerEmail?'Email: '+buyerEmail:'',buyerPhone?'Phone: '+buyerPhone:'',buyerVat].filter(Boolean).join('<br>')}</p>
+    </div>
+    <div class="party-block"><h4>Delivery Address</h4>
+      <p class="bold">${delCompany||'—'}</p>
+      <p>${[delAddress,delCity+(delCountry?', '+delCountry:''),delEmail?'Email: '+delEmail:'',delPhone?'Phone: '+delPhone:''].filter(Boolean).join('<br>')}</p>
+    </div>
+  </div>
+  <div class="meta-box">
+    <div>
+      <div class="row"><span class="lbl">Customer No.:</span><span class="val">${customerNo||'—'}</span></div>
+      <div class="row"><span class="lbl">Delivery Terms:</span><span class="val">${incoterm}</span></div>
+    </div>
+    <div>
+      <div class="row"><span class="lbl">Packing List No.:</span><span class="val" style="font-family:DM Mono,monospace;font-weight:700;color:#2c1810;">${plNum}</span></div>
+      <div class="row"><span class="lbl">Date:</span><span class="val">${date}</span></div>
+      <div class="row"><span class="lbl">PO No.:</span><span class="val">${poNo||'—'}</span></div>
+    </div>
+  </div>
+  <table class="goods">
+    <thead><tr>
+      <th>HS Code</th>
+      <th class="c">Product No</th>
+      <th>Description</th>
+      <th class="c">Country</th>
+      <th class="c">Type</th>
+      <th class="c">Dimensions</th>
+      <th class="r">Qty</th>
+      <th class="r">Net Wt (kg)</th>
+      <th class="r">Gross Wt (kg)</th>
+    </tr></thead>
+    <tbody>${rowsHTML}</tbody>
+    <tfoot><tr class="total">
+      <td colspan="6"><strong>TOTAL</strong></td>
+      <td class="r">${totalQty}</td>
+      <td class="r">${totalNet.toFixed(3)}</td>
+      <td class="r">${totalGross.toFixed(3)}</td>
+    </tr></tfoot>
+  </table>
+  <div class="sig-area" style="margin-top:10mm;">
+    <div style="font-size:8.5pt;font-weight:600;">Signature:</div>
+    <div class="sig-line"></div>
+    <div class="sig-name">Kaffe Bueno ApS</div>
+  </div>
+  </body></html>`;
+}
+
+// ════════════════════════════════════════════════════
+//  RESET
+// ════════════════════════════════════════════════════
+function resetPI() {
+  if (!confirm('Reset the Proforma Invoice form? This will clear all entered data.')) return;
+  ['pi-buyer-company','pi-buyer-vat','pi-buyer-address','pi-buyer-city','pi-buyer-country','pi-buyer-email','pi-buyer-phone',
+   'pi-del-company','pi-del-address','pi-del-city','pi-del-country','pi-del-email','pi-del-phone',
+   'pi-city-liability'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('pi-items-body').innerHTML = '';
+  piRowCount = 0;
+  addPIRow();
+  updateOriginStatement();
+  updateBankInfo();
+  showToast('Form reset.');
+}
+
+function resetPL() {
+  if (!confirm('Reset the Packing List form?')) return;
+  ['pl-buyer-company','pl-buyer-vat','pl-buyer-address','pl-buyer-city','pl-buyer-country','pl-buyer-email','pl-buyer-phone',
+   'pl-del-company','pl-del-address','pl-del-city','pl-del-country','pl-del-email','pl-del-phone',
+   'pl-customer-no','pl-po-no'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('pl-groups-body').innerHTML = '';
+  plGroupCount = 0; plItemCount = 0;
+  addPLGroup();
+  showToast('Form reset.');
+}
+
+// ════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════
+function showToast(msg, duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
