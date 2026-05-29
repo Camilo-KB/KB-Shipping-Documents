@@ -358,7 +358,11 @@
           <div class="field">
             <label>Proforma Invoice No.</label>
             <div class="doc-number" id="pi-number-display">26-0600</div>
-            <div class="doc-number-meta">Auto-incremented · Next: <span id="pi-next-preview"></span></div>
+            <div class="doc-number-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span>Next: <span id="pi-next-preview"></span></span>
+              <button onclick="piAdvanceNumber()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:1px 8px;font-family:DM Mono,monospace;font-size:9px;cursor:pointer;color:var(--muted);" title="Advance to next number">+1</button>
+              <button onclick="piSetNumber()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:1px 8px;font-family:DM Mono,monospace;font-size:9px;cursor:pointer;color:var(--muted);" title="Set number manually">Set…</button>
+            </div>
           </div>
           <div class="field">
             <label>Date</label>
@@ -540,6 +544,12 @@
             <div class="linked-note">← Set above</div>
           </div>
         </div>
+        <div class="form-grid form-grid-2" style="margin-top:12px;">
+          <div class="field">
+            <label>PO No.</label>
+            <input type="text" id="pi-po-no" placeholder="e.g. KB-002">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -612,6 +622,7 @@
     <div class="actions-bar">
       <button class="btn btn-primary" onclick="exportPDF('pi')">↓ Export to PDF</button>
       <button class="btn btn-ghost" onclick="resetPI()">Reset Form</button>
+      <button class="btn btn-ghost" onclick="piAdvanceNumber()" title="Manually move to the next PI number without exporting">→ Next Number</button>
     </div>
   </div>
 
@@ -628,7 +639,11 @@
           <div class="field">
             <label>Packing List No.</label>
             <div class="doc-number" id="pl-number-display">26040001</div>
-            <div class="doc-number-meta">Auto-incremented (yymmxxxx)</div>
+            <div class="doc-number-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span>Auto (yymmxxxx)</span>
+              <button onclick="plAdvanceNumber()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:1px 8px;font-family:DM Mono,monospace;font-size:9px;cursor:pointer;color:var(--muted);" title="Advance to next number">+1</button>
+              <button onclick="plSetNumber()" style="background:none;border:1px solid var(--border);border-radius:2px;padding:1px 8px;font-family:DM Mono,monospace;font-size:9px;cursor:pointer;color:var(--muted);" title="Set number manually">Set…</button>
+            </div>
           </div>
           <div class="field">
             <label>Date</label>
@@ -796,6 +811,7 @@
     <div class="actions-bar">
       <button class="btn btn-primary" onclick="exportPDF('pl')">↓ Export to PDF</button>
       <button class="btn btn-ghost" onclick="resetPL()">Reset Form</button>
+      <button class="btn btn-ghost" onclick="plAdvanceNumber()" title="Manually move to the next PL number without exporting">→ Next Number</button>
     </div>
   </div>
 
@@ -896,12 +912,15 @@
         <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Default Price/kg Reference (auto-filled, editable per order)</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
           <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFOIL: €35/kg</span>
-          <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFOIL-R: €35/kg</span>
+          <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFOIL-R: €36/kg</span>
           <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFAGE: €80/kg</span>
           <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFAGE-D: €80/kg</span>
           <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFAGE-B: €80/kg</span>
           <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFAGE-BD: €80/kg</span>
           <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAGROW: €80/kg</span>
+          <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">KAFFIBRE: €5.50/kg</span>
+          <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">MELAVIA-SC: €50/kg</span>
+          <span style="font-family:DM Mono,monospace;font-size:10px;background:white;border:1px solid var(--border);padding:3px 10px;border-radius:2px;">Invisible Shield Prototype: €5/unit</span>
         </div>
       </div>
     </div>
@@ -1146,25 +1165,34 @@ if (STATE.customers.length === 0) {
 }
 
 // ── Catalogue defaults ───────────────────────────────
-const CATALOGUE_PRODUCTS = ['KAFFOIL','KAFFOIL-R','KAFFAGE','KAFFAGE-D','KAFFAGE-B','KAFFAGE-BD','KAGROW'];
+const CATALOGUE_PRODUCTS = ['KAFFOIL','KAFFOIL-R','KAFFAGE','KAFFAGE-D','KAFFAGE-B','KAFFAGE-BD','KAGROW','KAFFIBRE','MELAVIA-SC','Invisible Shield Prototype'];
 const PRODUCT_UNIT_VALUES = {
-  'KAFFOIL': 35, 'KAFFOIL-R': 35,
+  'KAFFOIL': 35, 'KAFFOIL-R': 36,
   'KAFFAGE': 80, 'KAFFAGE-D': 80, 'KAFFAGE-B': 80, 'KAFFAGE-BD': 80,
-  'KAGROW': 80
+  'KAGROW': 80,
+  'KAFFIBRE': 5.50,
+  'MELAVIA-SC': 50,
+  'Invisible Shield Prototype': 5
 };
 const PRODUCT_HS = {
   'KAFFOIL': '2101.12.92.00', 'KAFFOIL-R': '2101.12.92.00',
   'KAFFAGE': '2101.12.92.00', 'KAFFAGE-D': '2101.12.92.00',
   'KAFFAGE-B': '2101.12.92.00', 'KAFFAGE-BD': '2101.12.92.00',
-  'KAGROW': '0901.90.00.00'
+  'KAGROW': '0901.90.00.00',
+  'KAFFIBRE': '0901.90.00.00',
+  'MELAVIA-SC': '2102.12.92.00',
+  'Invisible Shield Prototype': '3304.99.00.00'
 };
 const PRODUCT_CODES = {
   'KAFFOIL': '010201', 'KAFFOIL-R': '010301',
   'KAFFAGE': '030101', 'KAFFAGE-D': '030102',
   'KAFFAGE-B': '030201', 'KAFFAGE-BD': '030202',
-  'KAGROW': '040101'
+  'KAGROW': '040101',
+  'KAFFIBRE': '050101',
+  'MELAVIA-SC': '060101',
+  'Invisible Shield Prototype': '070101'
 };
-const HS_CODES = ['2101.12.92.00','0901.90.00.00','3402.90.19.00'];
+const HS_CODES = ['2101.12.92.00','0901.90.00.00','3402.90.19.00','2102.12.92.00','3304.99.00.00'];
 
 // ── Custom products registry (persisted in localStorage) ─────────────────────
 // Structure: { 'key': { name, code, hsCode, pricePerKg } }
@@ -1305,15 +1333,27 @@ function addPIRow() {
   onPIProductChange(tr.querySelector('select'), rid);
 }
 
+// Ensure an HS code option exists in a select, adding it if needed
+function ensureHSOption(selectEl, hsCode) {
+  if (!hsCode) return;
+  let found = false;
+  for (let i = 0; i < selectEl.options.length; i++) {
+    if (selectEl.options[i].value === hsCode) { selectEl.selectedIndex = i; found = true; break; }
+  }
+  if (!found) {
+    const opt = document.createElement('option');
+    opt.value = hsCode; opt.text = hsCode;
+    selectEl.appendChild(opt);
+    selectEl.value = hsCode;
+  }
+}
+
 function onPIProductChange(sel, rid) {
   if (sel.value === '__custom__') { openCustomProductModal(sel, rid, 'pi'); return; }
   const prod = sel.value;
   document.getElementById(rid + '-pkgprice').value = getProductPricePerKg(prod);
   const hsCode = getProductHS(prod);
-  const hsSelect = document.getElementById(rid + '-hs');
-  for (let i = 0; i < hsSelect.options.length; i++) {
-    if (hsSelect.options[i].value === hsCode) { hsSelect.selectedIndex = i; break; }
-  }
+  ensureHSOption(document.getElementById(rid + '-hs'), hsCode);
   calcPIRow(rid);
 }
 
@@ -1765,6 +1805,7 @@ async function exportPI() {
   const cityLiab     = document.getElementById('pi-city-liability').value;
   const accountType  = document.getElementById('pi-account-type').value;
   const bank         = BANK_DATA[accountType];
+  const poNo         = document.getElementById('pi-po-no')?.value || '';
   const originStmt   = document.getElementById('pi-origin-statement').textContent;
   const buyerCompany = document.getElementById('pi-buyer-company').value;
   const buyerAddress = document.getElementById('pi-buyer-address').value;
@@ -2228,8 +2269,7 @@ function mdOnProductChange(sel) {
   const prod = document.getElementById(pid+'-prod').value;
   const hs   = getProductHS(prod);
   const ppkg = getProductPricePerKg(prod);
-  const hsEl = document.getElementById(pid+'-hs');
-  for(let i=0;i<hsEl.options.length;i++) if(hsEl.options[i].value===hs){hsEl.selectedIndex=i;break;}
+  ensureHSOption(document.getElementById(pid+'-hs'), hs);
   document.getElementById(pid+'-ppkg').value = ppkg;
   mdCalcNet(pid);
   mdRefreshPackageProductLists();
@@ -2373,6 +2413,7 @@ function mdApply() {
   const piCur=document.getElementById('pi-currency');   if(piCur) piCur.value=g('md-currency');
   const piRea=document.getElementById('pi-reason');     if(piRea) piRea.value=g('md-reason');
   const piAcc=document.getElementById('pi-account-type'); if(piAcc) piAcc.value=g('md-account');
+  const piPO=document.getElementById('pi-po-no'); if(piPO) piPO.value=g('md-po-no');
   updateCityOfLiability(); updateOriginStatement(); updateBankInfo();
 
   // Shipment terms → PL
@@ -2639,8 +2680,7 @@ function onPLItemChange(sel, iid) {
   const prod = sel.value;
   document.getElementById(iid+'-code').value = getProductCode(prod);
   const hsCode = getProductHS(prod);
-  const hsS = document.getElementById(iid+'-hs');
-  for(let i=0;i<hsS.options.length;i++) if(hsS.options[i].value===hsCode){hsS.selectedIndex=i;break;}
+  ensureHSOption(document.getElementById(iid+'-hs'), hsCode);
 }
 
 function removePLItem(iid) {
@@ -2779,6 +2819,7 @@ function buildPIDoc() {
   const cityLiab     = document.getElementById('pi-city-liability').value;
   const accountType  = document.getElementById('pi-account-type').value;
   const bank         = BANK_DATA[accountType];
+  const poNo         = document.getElementById('pi-po-no')?.value || '';
   const originStmt   = document.getElementById('pi-origin-statement').textContent;
   const buyerCompany = document.getElementById('pi-buyer-company').value;
   const buyerAddress = document.getElementById('pi-buyer-address').value;
@@ -2866,6 +2907,7 @@ function buildPIDoc() {
         <div><span class="lbl">Terms of Trade:</span> ${incoterm}</div>
         <div><span class="lbl">Currency:</span> ${currency}</div>
         <div><span class="lbl">City of Liability:</span> ${cityLiab}</div>
+        ${poNo ? `<div><span class="lbl">PO No.:</span> ${poNo}</div>` : ''}
       </div>
     </div>
     <div>
@@ -3132,6 +3174,64 @@ function refreshAllProductDropdowns() {
     const current = sel.value;
     sel.innerHTML = productOptionsHTML(current);
   });
+}
+
+// ════════════════════════════════════════════════════
+//  SEQUENCE NUMBER CONTROLS
+// ════════════════════════════════════════════════════
+function piAdvanceNumber() {
+  STATE.piCounter++;
+  localStorage.setItem('kb_pi_counter', STATE.piCounter);
+  const n = '26-0' + String(STATE.piCounter).padStart(3,'0');
+  document.getElementById('pi-number-display').textContent = n;
+  document.getElementById('pi-next-preview').textContent   = '26-0' + String(STATE.piCounter+1).padStart(3,'0');
+  showToast('PI number advanced to ' + n);
+}
+
+function piSetNumber() {
+  const current = document.getElementById('pi-number-display').textContent;
+  const input = prompt('Set Proforma Invoice number manually (format: 26-0601):', current);
+  if (!input) return;
+  const trimmed = input.trim();
+  // Parse out the numeric suffix: supports 26-0601, 260601, 601, etc.
+  const match = trimmed.match(/(\d+)$/);
+  if (!match) { showToast('Invalid format. Use e.g. 26-0601', 4000); return; }
+  const num = parseInt(match[1]);
+  if (isNaN(num) || num < 0) { showToast('Invalid number.', 4000); return; }
+  STATE.piCounter = num;
+  localStorage.setItem('kb_pi_counter', STATE.piCounter);
+  const display = '26-0' + String(STATE.piCounter).padStart(3,'0');
+  document.getElementById('pi-number-display').textContent = display;
+  document.getElementById('pi-next-preview').textContent   = '26-0' + String(STATE.piCounter+1).padStart(3,'0');
+  showToast('PI number set to ' + display);
+}
+
+function plAdvanceNumber() {
+  const now = new Date();
+  const yy  = String(now.getFullYear()).slice(-2);
+  const mm  = String(now.getMonth()+1).padStart(2,'0');
+  const key = yy+mm;
+  STATE.plCounters[key] = (STATE.plCounters[key]||0) + 1;
+  localStorage.setItem('kb_pl_counters', JSON.stringify(STATE.plCounters));
+  const n = getPLNumber();
+  document.getElementById('pl-number-display').textContent = n;
+  showToast('PL number advanced to ' + n);
+}
+
+function plSetNumber() {
+  const current = document.getElementById('pl-number-display').textContent;
+  const input = prompt('Set Packing List number manually (format: 26050003):', current);
+  if (!input) return;
+  const trimmed = input.trim();
+  if (!/^\d{8}$/.test(trimmed)) { showToast('Use 8-digit format: yymmxxxx (e.g. 26050003)', 4000); return; }
+  const yy  = trimmed.slice(0,2);
+  const mm  = trimmed.slice(2,4);
+  const seq = parseInt(trimmed.slice(4));
+  const key = yy+mm;
+  STATE.plCounters[key] = seq;
+  localStorage.setItem('kb_pl_counters', JSON.stringify(STATE.plCounters));
+  document.getElementById('pl-number-display').textContent = trimmed;
+  showToast('PL number set to ' + trimmed);
 }
 
 // ════════════════════════════════════════════════════
